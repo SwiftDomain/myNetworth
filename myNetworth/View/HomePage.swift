@@ -225,6 +225,7 @@ struct CategoryChartView: View {
                 .foregroundColor(.white)
             
             if !data.isEmpty {
+                
                 Chart(data, id: \.0) { item in
                     SectorMark(
                         angle: .value("Amount", item.1),
@@ -234,6 +235,7 @@ struct CategoryChartView: View {
                     .foregroundStyle(by: .value("Category", item.0))
                 }
                 .frame(height: 250)
+                
             }
         }
         .padding()
@@ -245,4 +247,10 @@ struct CategoryChartView: View {
 // MARK: - Preview
 #Preview {
     HomePage()
+}
+
+#Preview {
+   
+    CategoryChartView(data: [("HEllo", 50), ("World", 30)], title: "Test Title", color: .black)
+    
 }
