@@ -139,4 +139,3 @@ class NetWorthViewModel: ObservableObject {
 enum ItemType {
     case asset, liability
 }
-
