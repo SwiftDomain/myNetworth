@@ -404,3 +404,9 @@ struct AddItemView_Previews: PreviewProvider {
         
     }
 }
+
+#Preview {
+   
+    CategoryChartView(data: [("HEllo", 50), ("World", 30)], title: "Test Title", color: .black)
+    
+}
