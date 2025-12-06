@@ -26,65 +26,17 @@ struct AllItemsView: View {
     }
     
     var body: some View {
+        
         ZStack {
-            LinearGradient(
-                colors: [Color(red: 0.05, green: 0.15, blue: 0.35), Color(red: 0.1, green: 0.25, blue: 0.45)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            
+            Background(bgColor1: .blue, bgColor2: .blue.opacity(0.1))
             
             VStack(spacing: 0) {
-                // Add Buttons at Top
-                HStack(spacing: 12) {
-                    Button {
-                        addItemType = .asset
-                        showingAddSheet = true
-                    } label: {
-                        HStack {
-                            Image(systemName: "plus.circle.fill")
-                            Text("Add Asset")
-                        }
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(
-                            LinearGradient(
-                                colors: [Color.green.opacity(0.6), Color.green.opacity(0.8)],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .cornerRadius(12)
-                    }
-                    
-                    Button {
-                        addItemType = .liability
-                        showingAddSheet = true
-                    } label: {
-                        HStack {
-                            Image(systemName: "plus.circle.fill")
-                            Text("Add Liability")
-                        }
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(
-                            LinearGradient(
-                                colors: [Color.red.opacity(0.6), Color.red.opacity(0.8)],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .cornerRadius(12)
-                    }
-                }
-                .padding()
                 
                 ScrollView {
+                    
                     VStack(spacing: 20) {
+                        
                         // Quick Stats
                         HStack(spacing: 12) {
                             VStack(alignment: .leading, spacing: 4) {

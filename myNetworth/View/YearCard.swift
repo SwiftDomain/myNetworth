@@ -13,6 +13,7 @@ struct YearCard: View {
     let data: YearlyData
     
     var body: some View {
+        
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "calendar")
@@ -328,23 +329,35 @@ struct SummaryCard: View {
     }
 }
 
-#Preview {
+// MARK: - Preview
+
+struct AddYearView_Previews: PreviewProvider {
     
-    let netW: NetWorthViewModel = NetWorthViewModel()
-    AddYearView(viewModel: netW, newYear: .constant(2024))
-    
+    static var previews: some View {
+        
+        let netW: NetWorthViewModel = NetWorthViewModel()
+        AddYearView(viewModel: netW, newYear: .constant(2024))
+        
+    }
 }
 
-#Preview {
+struct YearDetailView_Previews: PreviewProvider {
     
-    let netW: NetWorthViewModel = NetWorthViewModel()
-    YearDetailView(viewModel: netW, year: 2025)
+    static var previews: some View {
+        
+        let netW: NetWorthViewModel = NetWorthViewModel()
+
+        YearDetailView(viewModel: netW, year: 2025)
+        
+    }
 }
 
-#Preview {
+struct YearCard_Previews: PreviewProvider {
     
-    YearCard(year: 2025, data: YearlyData(year: 2025, assets: 20320, liabilities: 23009, netWorth: 123344))
-        .background(Color.black.edgesIgnoringSafeArea(.all))
+    static var previews: some View {
+        
+        YearCard(year: 2025, data: YearlyData(year: 2025, assets: 20320, liabilities: 23009, netWorth: 123344))
+            .background(Color.black.edgesIgnoringSafeArea(.all))
+        
+    }
 }
-
-

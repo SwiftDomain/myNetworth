@@ -13,7 +13,7 @@ class NetWorthViewModel: ObservableObject {
     @Published var liabilities: [FinancialItem] = []
     @Published var years: [Int] = []
     
-    let assetCategories = ["Cash", "Investments", "Real Estate", "Person", "Retirement", "Other"]
+    let assetCategories = ["Cash", "Investments", "Crypto", "Real Estate", "Retirement", "Vehicle", "Furniture", "Jewelry", "Other"]
     let liabilityCategories = ["Mortgage", "Auto Loan", "Credit Card", "Student Loan", "Other"]
     
     init() {

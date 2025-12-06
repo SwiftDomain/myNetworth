@@ -9,7 +9,7 @@ import Charts
 
 // MARK: - Main View (Year Selection)
 struct HomePage: View {
-    @StateObject private var viewModel = NetWorthViewModel() 
+    @StateObject private var viewModel = NetWorthViewModel()
     @State private var showingAddYear = false
     @State private var newYear = Calendar.current.component(.year, from: Date())
     
@@ -17,12 +17,8 @@ struct HomePage: View {
         
         NavigationView {
             ZStack {
-                LinearGradient(
-                    colors: [Color(red: 0.05, green: 0.1, blue: 0.2), Color(red: 0.1, green: 0.15, blue: 0.3)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
+                
+                Background(bgColor1: .blue, bgColor2: .blue.opacity(0.3))
                 
                 ScrollView {
                     VStack(spacing: 20) {
@@ -166,47 +162,155 @@ struct AddItemView: View {
     }
     
     var body: some View {
-        NavigationView {
-            Form {
-                Section("Details") {
-                    TextField("Name", text: $name)
-                    TextField("Amount", value: $amount, formatter: NumberFormatter())
-                        .keyboardType(.numberPad)
+        
+        ZStack {
+            
+            Background(bgColor1: type == .asset ? .green : .red, bgColor2: type == .asset ? .green : .red)
+            
+            NavigationView {
+                
+                VStack{
                     
-                    Picker("Category", selection: $selectedCategory) {
-                        Text("Select category").tag("")
-                        ForEach(categories, id: \.self) { category in
-                            Text(category).tag(category)
+                    // Header
+                    VStack(spacing: 8) {
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                            .font(.system(size: 60))
+                            .foregroundColor(.blue.opacity(0.8))
+                        
+                        Text("Add Asset")
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundColor(.white)
+                        
+                        Text("Track your financial journey")
+                            .font(.subheadline)
+                            .foregroundColor(.white.opacity(0.7))
+                        
+                        Text("New Asset")
+                            .font(.caption)
+                            .foregroundColor(.blue.opacity(0.8))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color.blue.opacity(0.2))
+                            .cornerRadius(8)
+                    }
+                    .padding(.bottom, 20)
+                    
+                    /* New Asset Card */
+                    VStack(spacing: 20) {
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Name")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.white)
+                            
+                            TextField("Name", text: $name)
+                                .textFieldStyle(.plain)
+                                .padding()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Color.white)
+                                .cornerRadius(10)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(Color(red: 0.4, green: 0.6, blue: 0.85), lineWidth: 1)
+                                )
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Amount")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.white)
+
+                            TextField("Amount", value: $amount, formatter: Formatter.zeroSymbol)
+                                .keyboardType(.numberPad)
+                                .padding()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Color.white)
+                                .cornerRadius(10)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(Color(red: 0.4, green: 0.6, blue: 0.85), lineWidth: 1)
+                                )
+                            
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Department")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.white)
+
+                            Picker("Category", selection: $selectedCategory) {
+                                Text("Select category").tag("")
+                                ForEach(categories, id: \.self) { category in
+                                    Text(category).tag(category)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.white)
+                            .cornerRadius(10)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(Color(red: 0.4, green: 0.6, blue: 0.85), lineWidth: 1)
+                            )
                         }
                     }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.white.opacity(0.1))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+                            )
+                    )
+                    Spacer()
                 }
-            }
-            .navigationTitle("Add \(type == .asset ? "Asset" : "Liability")")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Add") {
-                        guard !name.isEmpty, amount > 0, !selectedCategory.isEmpty else { return }
+                .padding()
+                .toolbarTitleDisplayMode(.inlineLarge)
+                .navigationTitle("")
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
                         
-                        let item = FinancialItem(
-                            name: name,
-                            amount: amount,
-                            year: year,
-                            category: selectedCategory
-                        )
-                        
-                        if type == .asset {
-                            viewModel.addAsset(item)
-                        } else {
-                            viewModel.addLiability(item)
+                        Button {
+                            dismiss()
+                        } label: {
+                            Image(systemName: "arrowshape.turn.up.backward.circle")
+                                .font(.title3)
+                                .foregroundColor(.blue)
                         }
                         
-                        dismiss()
                     }
-                    .disabled(name.isEmpty || amount == 0 || selectedCategory.isEmpty)
+                    ToolbarItem(placement: .confirmationAction) {
+                        
+                        Button {
+                            guard !name.isEmpty, amount > 0, !selectedCategory.isEmpty else { return }
+                            
+                            let item = FinancialItem(
+                                name: name,
+                                amount: amount,
+                                year: year,
+                                category: selectedCategory
+                            )
+                            
+                            if type == .asset {
+                                viewModel.addAsset(item)
+                            } else {
+                                viewModel.addLiability(item)
+                            }
+                            
+                            dismiss()
+                        } label: {
+                            Image(systemName: "square.and.arrow.down.fill")
+                                .font(.title3)
+                                .foregroundColor(.blue)
+                        }
+                        .disabled(name.isEmpty || amount == 0 || selectedCategory.isEmpty)
+                        
+                    }
                 }
             }
         }
@@ -244,13 +348,59 @@ struct CategoryChartView: View {
     }
 }
 
-// MARK: - Preview
-#Preview {
-    HomePage()
+struct Background: View {
+    
+    let bgColor1: Color //= Color(red: 0.05, green: 0.1, blue: 0.2)
+    let bgColor2: Color //= Color(red: 0.1, green: 0.15, blue: 0.3)
+    
+    var body: some View {
+        
+        LinearGradient(
+            colors: [bgColor1, bgColor2],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .ignoresSafeArea()
+    }
 }
 
-#Preview {
-   
-    CategoryChartView(data: [("HEllo", 50), ("World", 30)], title: "Test Title", color: .black)
+
+// This is a reusable number formatter
+extension Formatter {
+    static let zeroSymbol: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.zeroSymbol  = ""     // Show empty string instead of zero
+        return formatter
+    }()
+}
+
+
+
+// MARK: - Preview
+struct HomePage_Previews: PreviewProvider {
     
+    static var previews: some View {
+        
+        HomePage()
+        
+    }
+}
+
+struct CategoryChartView_Previews: PreviewProvider {
+    
+    static var previews: some View {
+        
+        CategoryChartView(data: [("HEllo", 50), ("World", 30)], title: "Test Title", color: .black)
+        
+    }
+}
+
+
+struct AddItemView_Previews: PreviewProvider {
+    
+    static var previews: some View {
+        
+        AddItemView(viewModel: NetWorthViewModel(), type: .asset, year: 2025)
+        
+    }
 }
