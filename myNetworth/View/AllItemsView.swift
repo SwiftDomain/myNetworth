@@ -43,7 +43,7 @@ struct AllItemsView: View {
                                 Text("Assets")
                                     .font(.caption)
                                     .foregroundColor(.white.opacity(0.7))
-                                Text(viewModel.getYearData(for: year).assets, format: .currency(code: "USD"))
+                                Text(viewModel.getYearData(for: year).assets, format: .currency(code: "USD").precision(.fractionLength(0)))
                                     .font(.headline)
                                     .foregroundColor(.green)
                             }
@@ -56,7 +56,7 @@ struct AllItemsView: View {
                                 Text("Liabilities")
                                     .font(.caption)
                                     .foregroundColor(.white.opacity(0.7))
-                                Text(viewModel.getYearData(for: year).liabilities, format: .currency(code: "USD"))
+                                Text(viewModel.getYearData(for: year).liabilities, format: .currency(code: "USD").precision(.fractionLength(0)))
                                     .font(.headline)
                                     .foregroundColor(.red)
                             }
@@ -70,7 +70,7 @@ struct AllItemsView: View {
                             Text("Net Worth")
                                 .font(.caption)
                                 .foregroundColor(.white.opacity(0.7))
-                            Text(viewModel.getYearData(for: year).netWorth, format: .currency(code: "USD"))
+                            Text(viewModel.getYearData(for: year).netWorth, format: .currency(code: "USD").precision(.fractionLength(0)))
                                 .font(.title2)
                                 .fontWeight(.bold)
                                 .foregroundColor(.blue)
@@ -181,7 +181,7 @@ struct FinancialItemCard: View {
                     .font(.caption)
                     .foregroundColor(.white.opacity(0.7))
                 
-                Text(item.amount, format: .currency(code: "USD"))
+                Text(item.amount, format: .currency(code: "USD").precision(.fractionLength(0)))
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(type == .asset ? .green : .red)
@@ -200,7 +200,20 @@ struct FinancialItemCard: View {
     }
 }
 
-#Preview {
-    AllItemsView(viewModel: NetWorthViewModel(), year: 2025)
-}
+// MARK: - Preview
+struct FinancialItemCard_Previews: PreviewProvider {
+    
+    static let financialItem = FinancialItem(name: "Test", amount: 32_322, year: 2025, category: "Test category")
 
+    static var previews: some View {
+        Group {
+            FinancialItemCard(item: financialItem, type: .asset, onDelete: {})
+                .previewDisplayName("Asset")
+            FinancialItemCard(item: financialItem, type: .liability, onDelete: {})
+                .previewDisplayName("Liability")
+        }
+        .padding()
+        .background(Color.black)
+        .previewLayout(.sizeThatFits)
+    }
+}

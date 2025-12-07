@@ -9,16 +9,19 @@ import Charts
 
 // MARK: - Main View (Year Selection)
 struct HomePage: View {
+    
     @StateObject private var viewModel = NetWorthViewModel()
+    
     @State private var showingAddYear = false
     @State private var newYear = Calendar.current.component(.year, from: Date())
+    
     
     var body: some View {
         
         NavigationView {
             ZStack {
                 
-                Background(bgColor1: .blue, bgColor2: .blue.opacity(0.3))
+                Background(bgColor1: .bgMain1, bgColor2: .bgMain2)
                 
                 ScrollView {
                     VStack(spacing: 20) {
@@ -59,7 +62,9 @@ struct HomePage: View {
                             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                                 ForEach(viewModel.years, id: \.self) { year in
                                     NavigationLink(destination: YearDetailView(viewModel: viewModel, year: year)) {
-                                        YearCard(year: year, data: viewModel.getYearData(for: year))
+                                        
+                                        YearCard(viewModel: viewModel, year: year, data: viewModel.getYearData(for: year))
+                                        
                                     }
                                     .contextMenu {
                                         Button(role: .destructive) {
@@ -158,14 +163,14 @@ struct AddItemView: View {
     let year: Int
     
     var categories: [String] {
-        type == .asset ? viewModel.assetCategories : viewModel.liabilityCategories
+        type == .asset ? AssetCategories.allCases.map(\.rawValue) : LiabilitieCategories.allCases.map(\.rawValue)
     }
     
     var body: some View {
         
         ZStack {
             
-            Background(bgColor1: type == .asset ? .green : .red, bgColor2: type == .asset ? .green : .red)
+            Background(bgColor1: type == .asset ? .bgAsset1 : .bgLiability1, bgColor2: type == .asset ? .bgAsset2 : .bgAsset2)
             
             NavigationView {
                 
@@ -177,7 +182,7 @@ struct AddItemView: View {
                             .font(.system(size: 60))
                             .foregroundColor(.blue.opacity(0.8))
                         
-                        Text("Add Asset")
+                        Text(type == .asset ? "Add Asset" : "Add Liability")
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(.white)
                         
@@ -185,7 +190,7 @@ struct AddItemView: View {
                             .font(.subheadline)
                             .foregroundColor(.white.opacity(0.7))
                         
-                        Text("New Asset")
+                        Text(type == .asset ? "New Asset" : "New Liability")
                             .font(.caption)
                             .foregroundColor(.blue.opacity(0.8))
                             .padding(.horizontal, 12)
@@ -323,10 +328,13 @@ struct CategoryChartView: View {
     let color: Color
     
     var body: some View {
+        
         VStack(alignment: .leading, spacing: 12) {
+            
             Text(title)
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(.black)
+                .padding()
             
             if !data.isEmpty {
                 
@@ -337,8 +345,14 @@ struct CategoryChartView: View {
                         angularInset: 2
                     )
                     .foregroundStyle(by: .value("Category", item.0))
+                    
                 }
-                .frame(height: 250)
+                .scaledToFit()
+//                .chartForegroundStyleScale([ // Define the specific colors for categories
+//                    "Car": .green,
+//                    "House": .red
+//                ])
+                
                 
             }
         }
@@ -377,7 +391,7 @@ extension Formatter {
 
 
 // MARK: - Preview
-struct HomePage_Previews: PreviewProvider {
+struct HomePage2_Previews: PreviewProvider {
     
     static var previews: some View {
         
@@ -390,7 +404,7 @@ struct CategoryChartView_Previews: PreviewProvider {
     
     static var previews: some View {
         
-        CategoryChartView(data: [("HEllo", 50), ("World", 30)], title: "Test Title", color: .black)
+        CategoryChartView(data: [("Car", 50), ("House", 30), ("Credit Cared", 50), ("Jewerly", 30)], title: "Test Title", color: .black)
         
     }
 }
@@ -403,10 +417,4 @@ struct AddItemView_Previews: PreviewProvider {
         AddItemView(viewModel: NetWorthViewModel(), type: .asset, year: 2025)
         
     }
-}
-
-#Preview {
-   
-    CategoryChartView(data: [("HEllo", 50), ("World", 30)], title: "Test Title", color: .black)
-    
 }

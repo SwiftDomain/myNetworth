@@ -13,8 +13,9 @@ class NetWorthViewModel: ObservableObject {
     @Published var liabilities: [FinancialItem] = []
     @Published var years: [Int] = []
     
-    let assetCategories = ["Cash", "Investments", "Crypto", "Real Estate", "Retirement", "Vehicle", "Furniture", "Jewelry", "Other"]
-    let liabilityCategories = ["Mortgage", "Auto Loan", "Credit Card", "Student Loan", "Other"]
+    //let assetCategories = ["Cash", "Investments", "Crypto", "Real Estate", "Retirement", "Vehicle", "Furniture", "Jewelry", "Other"]
+    
+    // let liabilityCategories = ["Mortgage", "Auto Loan", "Credit Card", "Student Loan", "Other"]
     
     init() {
         loadData()
@@ -138,4 +139,44 @@ class NetWorthViewModel: ObservableObject {
 
 enum ItemType {
     case asset, liability
+}
+
+enum AssetCategories: String, Codable, CaseIterable {
+    
+    case cash = "Cash", investments = "Investments", realEstate = "Real Estate", retirement = "Retirement", vehicle = "Vehicle", crypto = "Crypto", furniture = "Furniture", jewelry = "Jewelry", other = "Other"
+    
+    var assetColor: Color {
+        
+        switch self {
+            
+        case .cash: return .green
+        case .investments: return .orange
+        case .realEstate: return .gray
+        case .other: return .brown
+        case .crypto: return .black
+        case .retirement: return .blue
+        case .vehicle: return .yellow
+        case .furniture: return .orange
+        case .jewelry: return .red
+            
+        }
+    }
+}
+
+enum LiabilitieCategories: String, Codable, CaseIterable{
+    
+    case mortgage = "Mortgage", autoLoan = "Auto Loan", creditCard = "Credit Card", studentLoan = "Student Loan", other = "Other"
+    
+    var liabilityColor: Color{
+        
+        switch self {
+            
+        case .mortgage: return .green
+        case .autoLoan: return .orange
+        case .creditCard: return .gray
+        case .studentLoan: return .brown
+        case .other: return .black
+            
+        }
+    }
 }

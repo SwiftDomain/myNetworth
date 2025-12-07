@@ -23,3 +23,5 @@ struct YearlyData: Identifiable {
     var liabilities: Int
     var netWorth: Int
 }
+
+

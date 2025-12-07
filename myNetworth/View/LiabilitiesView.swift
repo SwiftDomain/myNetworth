@@ -19,14 +19,11 @@ struct LiabilitiesView: View {
     
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [Color(red: 0.3, green: 0.05, blue: 0.1), Color(red: 0.4, green: 0.1, blue: 0.15)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+
+            Background(bgColor1: .bgLiability1, bgColor2: .bgLiability2)
             
             ScrollView {
+                
                 VStack(spacing: 16) {
                     if yearLiabilities.isEmpty {
                         EmptyStateView(
@@ -50,7 +47,6 @@ struct LiabilitiesView: View {
                                 title: "Liabilities by Category",
                                 color: .red
                             )
-                            .padding(.top, 20)
                         }
                     }
                 }
@@ -69,4 +65,9 @@ struct LiabilitiesView: View {
             AddItemView(viewModel: viewModel, type: .liability, year: year)
         }
     }
+}
+
+#Preview {
+
+    LiabilitiesView(viewModel: NetWorthViewModel(), year: 2025)
 }

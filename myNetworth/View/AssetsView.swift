@@ -22,25 +22,13 @@ struct AssetsView: View {
     var body: some View {
         
         ZStack {
-            LinearGradient(
-                colors: [Color(red: 0.05, green: 0.25, blue: 0.15), Color(red: 0.1, green: 0.35, blue: 0.2)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
             
-            VStack(spacing: 16) {
+            Background(bgColor1: .bgAsset1, bgColor2: .bgAsset2)
+            
+            ScrollView {
                 
-                if !yearAssets.isEmpty {
-                    CategoryChartView(
-                        data: viewModel.getCategoryData(for: .asset, year: year),
-                        title: "Assets by Category",
-                        color: .green
-                    )
-                    .padding(.horizontal, 20)
-                }
-                
-                ScrollView {
+                VStack(spacing: 16) {
+                    
                     if yearAssets.isEmpty {
                         EmptyStateView(
                             icon: "dollarsign.circle",
@@ -56,6 +44,15 @@ struct AssetsView: View {
                                 onDelete: { viewModel.deleteAsset(asset) }
                             )
                         }
+                        
+                        if !yearAssets.isEmpty {
+                            CategoryChartView(
+                                data: viewModel.getCategoryData(for: .asset, year: year),
+                                title: "Assets by Category",
+                                color: .green
+                            )
+                        }
+                        
                         
                     }
                 }
