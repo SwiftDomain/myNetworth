@@ -283,7 +283,7 @@ struct AddItemView: View {
                         Button {
                             dismiss()
                         } label: {
-                            Image(systemName: "arrowshape.turn.up.backward.circle")
+                            Image(systemName:"arrowshape.turn.up.backward.circle.fill")
                                 .font(.title3)
                                 .foregroundColor(.blue)
                         }
@@ -309,7 +309,7 @@ struct AddItemView: View {
                             
                             dismiss()
                         } label: {
-                            Image(systemName: "square.and.arrow.down.fill")
+                            Image(systemName: "checkmark.circle.fill")
                                 .font(.title3)
                                 .foregroundColor(.blue)
                         }
@@ -348,11 +348,6 @@ struct CategoryChartView: View {
                     
                 }
                 .scaledToFit()
-//                .chartForegroundStyleScale([ // Define the specific colors for categories
-//                    "Car": .green,
-//                    "House": .red
-//                ])
-                
                 
             }
         }
