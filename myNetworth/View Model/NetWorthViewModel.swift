@@ -9,18 +9,17 @@ import Combine
 
 // MARK: - View Model
 class NetWorthViewModel: ObservableObject {
+    
     @Published var assets: [FinancialItem] = []
     @Published var liabilities: [FinancialItem] = []
     @Published var years: [Int] = []
-    
-    //let assetCategories = ["Cash", "Investments", "Crypto", "Real Estate", "Retirement", "Vehicle", "Furniture", "Jewelry", "Other"]
-    
-    // let liabilityCategories = ["Mortgage", "Auto Loan", "Credit Card", "Student Loan", "Other"]
+
     
     init() {
         loadData()
     }
     
+    /* Computed property yearlyData.  An array of YearlyData*/
     var yearlyData: [YearlyData] {
         let allYears = Set(assets.map { $0.year } + liabilities.map { $0.year })
         return allYears.sorted().map { year in
@@ -30,22 +29,42 @@ class NetWorthViewModel: ObservableObject {
                 year: year,
                 assets: totalAssets,
                 liabilities: totalLiabilities,
-                netWorth: totalAssets - totalLiabilities
+                netWorth: totalAssets - totalLiabilities,
+                assetCategortyTotal: [.cash:12],
+                liabilityCategortyTotal: [.autoLoan:23]
             )
         }
     }
     
+    /* Get all the assets and liabilities for a given year. */
     func getYearData(for year: Int) -> YearlyData {
+        
         let totalAssets = assets.filter { $0.year == year }.reduce(0) { $0 + $1.amount }
         let totalLiabilities = liabilities.filter { $0.year == year }.reduce(0) { $0 + $1.amount }
+        
+        var totalAssetCategories: [AssetCategories: Int] = [:]
+        var totalLiabilityCategories: [LiabilityCategories: Int] = [:]
+        
+        
+        for category in AssetCategories.allCases {
+                totalAssetCategories[category] = assets.filter { $0.year == year && $0.category == category.rawValue}.reduce(0) { $0 + $1.amount }
+        }
+        
+        for category in LiabilityCategories.allCases {
+            totalLiabilityCategories[category] = liabilities.filter { $0.year == year && $0.category == category.rawValue}.reduce(0) { $0 + $1.amount }            
+        }
+        
         return YearlyData(
             year: year,
             assets: totalAssets,
             liabilities: totalLiabilities,
-            netWorth: totalAssets - totalLiabilities
+            netWorth: totalAssets - totalLiabilities,
+            assetCategortyTotal: totalAssetCategories,
+            liabilityCategortyTotal: totalLiabilityCategories
         )
     }
     
+    /* Add a year */
     func addYear(_ year: Int) {
         if !years.contains(year) {
             years.append(year)
@@ -54,6 +73,7 @@ class NetWorthViewModel: ObservableObject {
         }
     }
     
+    /* Delete a year with all the data from the year.  Assets and liabilites. */
     func deleteYear(_ year: Int) {
         years.removeAll { $0 == year }
         assets.removeAll { $0.year == year }
@@ -61,27 +81,33 @@ class NetWorthViewModel: ObservableObject {
         saveData()
     }
     
+    /* Add an asset */
     func addAsset(_ item: FinancialItem) {
         assets.append(item)
         saveData()
     }
     
+    /* Add a liability */
     func addLiability(_ item: FinancialItem) {
         liabilities.append(item)
         saveData()
     }
     
+    /* Delete the asset */
     func deleteAsset(_ item: FinancialItem) {
         assets.removeAll { $0.id == item.id }
         saveData()
     }
     
+    /* Delete the liability */
     func deleteLiability(_ item: FinancialItem) {
         liabilities.removeAll { $0.id == item.id }
         saveData()
     }
     
+    /* Return a dictionary with all assets or liabilities for the itemType i.e (Asset or Liability) */
     func getCategoryData(for type: ItemType, year: Int) -> [(String, Int)] {
+        
         let items = type == .asset ? assets.filter { $0.year == year } : liabilities.filter { $0.year == year }
         var categories: [String: Int] = [:]
         
@@ -90,25 +116,33 @@ class NetWorthViewModel: ObservableObject {
         }
         
         return categories.map { ($0.key, $0.value) }.sorted { $0.1 > $1.1 }
+        
     }
     
+    /* Save the data to memory */
     private func saveData() {
         let defaults = UserDefaults.standard
+        
         if let assetsData = try? JSONEncoder().encode(assets),
            let assetsString = String(data: assetsData, encoding: .utf8) {
             defaults.set(assetsString, forKey: "assets")
         }
+        
         if let liabilitiesData = try? JSONEncoder().encode(liabilities),
            let liabilitiesString = String(data: liabilitiesData, encoding: .utf8) {
             defaults.set(liabilitiesString, forKey: "liabilities")
         }
+        
         if let yearsData = try? JSONEncoder().encode(years),
            let yearsString = String(data: yearsData, encoding: .utf8) {
             defaults.set(yearsString, forKey: "years")
         }
+        
     }
     
+    /* Load data from memory */
     private func loadData() {
+        
         let defaults = UserDefaults.standard
         
         if let assetsString = defaults.string(forKey: "assets"),
@@ -129,6 +163,7 @@ class NetWorthViewModel: ObservableObject {
             self.years = decodedYears
             self.years.sort(by: >)
         }
+        
     }
     
     
@@ -137,10 +172,12 @@ class NetWorthViewModel: ObservableObject {
     }
 }
 
+/* Financial item type */
 enum ItemType {
     case asset, liability
 }
 
+/* Asset categories */
 enum AssetCategories: String, Codable, CaseIterable {
     
     case cash = "Cash", investments = "Investments", realEstate = "Real Estate", retirement = "Retirement", vehicle = "Vehicle", crypto = "Crypto", furniture = "Furniture", jewelry = "Jewelry", other = "Other"
@@ -151,11 +188,11 @@ enum AssetCategories: String, Codable, CaseIterable {
             
         case .cash: return .green
         case .investments: return .orange
-        case .realEstate: return .gray
-        case .other: return .brown
-        case .crypto: return .black
+        case .realEstate: return .yellow
+        case .other: return .black
+        case .crypto: return .mint
         case .retirement: return .blue
-        case .vehicle: return .yellow
+        case .vehicle: return .brown
         case .furniture: return .orange
         case .jewelry: return .red
             
@@ -163,7 +200,8 @@ enum AssetCategories: String, Codable, CaseIterable {
     }
 }
 
-enum LiabilitieCategories: String, Codable, CaseIterable{
+/* Liability categories */
+enum LiabilityCategories: String, Codable, CaseIterable{
     
     case mortgage = "Mortgage", autoLoan = "Auto Loan", creditCard = "Credit Card", studentLoan = "Student Loan", other = "Other"
     
@@ -173,8 +211,8 @@ enum LiabilitieCategories: String, Codable, CaseIterable{
             
         case .mortgage: return .green
         case .autoLoan: return .orange
-        case .creditCard: return .gray
-        case .studentLoan: return .brown
+        case .creditCard: return .red
+        case .studentLoan: return .blue
         case .other: return .black
             
         }

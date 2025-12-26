@@ -17,12 +17,13 @@
 		3E3EDAC22EE39F6A001016E5 /* AssetsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E3EDAC12EE39F6A001016E5 /* AssetsView.swift */; };
 		3E3EDAC42EE39F87001016E5 /* LiabilitiesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E3EDAC32EE39F87001016E5 /* LiabilitiesView.swift */; };
 		3E3EDAC82EE39FEC001016E5 /* OverallAnalysisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E3EDAC72EE39FEC001016E5 /* OverallAnalysisView.swift */; };
+		3EBC70B02EFF1031009DF832 /* CategoryBreakdownTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EBC70AF2EFF1031009DF832 /* CategoryBreakdownTile.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		3E3EDA9B2EE39580001016E5 /* myNetworth.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = myNetworth.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3E3EDAA92EE39D96001016E5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		3E3EDAAA2EE39D96001016E5 /* HomePage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePage.swift; sourceTree = "<group>"; };
+		3E3EDAAA2EE39D96001016E5 /* HomePage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePage.swift; sourceTree = "<group>"; tabWidth = 4; };
 		3E3EDAAB2EE39D96001016E5 /* myNetworthApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = myNetworthApp.swift; sourceTree = "<group>"; };
 		3E3EDAB22EE39E1D001016E5 /* FinancialItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinancialItem.swift; sourceTree = "<group>"; };
 		3E3EDAB52EE39E64001016E5 /* NetWorthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetWorthViewModel.swift; sourceTree = "<group>"; };
@@ -31,6 +32,7 @@
 		3E3EDAC12EE39F6A001016E5 /* AssetsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetsView.swift; sourceTree = "<group>"; };
 		3E3EDAC32EE39F87001016E5 /* LiabilitiesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiabilitiesView.swift; sourceTree = "<group>"; };
 		3E3EDAC72EE39FEC001016E5 /* OverallAnalysisView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverallAnalysisView.swift; sourceTree = "<group>"; };
+		3EBC70AF2EFF1031009DF832 /* CategoryBreakdownTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryBreakdownTile.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -75,6 +77,7 @@
 			isa = PBXGroup;
 			children = (
 				3E3EDAAA2EE39D96001016E5 /* HomePage.swift */,
+				3EBC70AF2EFF1031009DF832 /* CategoryBreakdownTile.swift */,
 				3E3EDAC72EE39FEC001016E5 /* OverallAnalysisView.swift */,
 				3E3EDAC32EE39F87001016E5 /* LiabilitiesView.swift */,
 				3E3EDAC12EE39F6A001016E5 /* AssetsView.swift */,
@@ -131,7 +134,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2610;
-				LastUpgradeCheck = 2610;
+				LastUpgradeCheck = 2620;
 				TargetAttributes = {
 					3E3EDA9A2EE39580001016E5 = {
 						CreatedOnToolsVersion = 26.1.1;
@@ -174,6 +177,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3E3EDAAE2EE39D96001016E5 /* HomePage.swift in Sources */,
+				3EBC70B02EFF1031009DF832 /* CategoryBreakdownTile.swift in Sources */,
 				3E3EDAB62EE39E64001016E5 /* NetWorthViewModel.swift in Sources */,
 				3E3EDAC42EE39F87001016E5 /* LiabilitiesView.swift in Sources */,
 				3E3EDAC02EE39F47001016E5 /* AllItemsView.swift in Sources */,
@@ -222,6 +226,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 5G4KHSNPYL;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -245,6 +250,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -284,6 +290,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 5G4KHSNPYL;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -300,6 +307,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
@@ -311,6 +319,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 5G4KHSNPYL;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -357,6 +366,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 5G4KHSNPYL;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;

@@ -163,7 +163,7 @@ struct AddItemView: View {
     let year: Int
     
     var categories: [String] {
-        type == .asset ? AssetCategories.allCases.map(\.rawValue) : LiabilitieCategories.allCases.map(\.rawValue)
+        type == .asset ? AssetCategories.allCases.map(\.rawValue) : LiabilityCategories.allCases.map(\.rawValue)
     }
     
     var body: some View {
@@ -213,7 +213,6 @@ struct AddItemView: View {
                                 .textFieldStyle(.plain)
                                 .padding()
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Color.white)
                                 .cornerRadius(10)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 10)
@@ -227,11 +226,10 @@ struct AddItemView: View {
                                 .fontWeight(.medium)
                                 .foregroundColor(.white)
 
-                            TextField("Amount", value: $amount, formatter: Formatter.zeroSymbol)
+                            TextField("Amount", value: $amount,format: .number)
                                 .keyboardType(.numberPad)
                                 .padding()
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Color.white)
                                 .cornerRadius(10)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 10)
@@ -283,7 +281,7 @@ struct AddItemView: View {
                         Button {
                             dismiss()
                         } label: {
-                            Image(systemName:"arrowshape.turn.up.backward.circle.fill")
+                            Image(systemName:"xmark.circle.fill")
                                 .font(.title3)
                                 .foregroundColor(.blue)
                         }
@@ -309,16 +307,23 @@ struct AddItemView: View {
                             
                             dismiss()
                         } label: {
-                            Image(systemName: "checkmark.circle.fill")
+                            Image(systemName: (name.isEmpty || amount == 0 || selectedCategory.isEmpty) ? "checkmark.circle" : "checkmark.circle.fill")
                                 .font(.title3)
-                                .foregroundColor(.blue)
+                                .foregroundColor((name.isEmpty || amount == 0 || selectedCategory.isEmpty) ? .gray : .blue)
                         }
                         .disabled(name.isEmpty || amount == 0 || selectedCategory.isEmpty)
-                        
                     }
                 }
             }
         }
+    }
+    
+    private var numberFormatter: NumberFormatter {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = ","
+        formatter.groupingSize = 3
+        return formatter
     }
 }
 

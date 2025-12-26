@@ -22,6 +22,8 @@ struct YearlyData: Identifiable {
     var assets: Int
     var liabilities: Int
     var netWorth: Int
+    var assetCategortyTotal: [AssetCategories: Int]
+    var liabilityCategortyTotal: [LiabilityCategories: Int]
 }
 
 

@@ -312,7 +312,9 @@ struct ScrollableYearPicker: View {
 
 // MARK: - Year Summary View
 struct YearSummaryView: View {
+    
     @ObservedObject var viewModel: NetWorthViewModel
+    
     let year: Int
     
     var yearData: YearlyData {
@@ -364,6 +366,22 @@ struct YearSummaryView: View {
                     .padding()
                         .background(Color.white.opacity(0.05))
                         .cornerRadius(16)
+                    
+                    
+                    // Assets Breakdown
+                    CategoryBreakdownTile(
+                        yearData: yearData,
+                        type: .asset
+                    )
+
+                    // Liabilities Breakdown
+                    CategoryBreakdownTile(
+                        yearData: yearData,
+                        type: .liability
+                    )
+                    
+                    
+                    
                     
                     
                     // Assets vs Liabilities Comparison
@@ -468,7 +486,7 @@ struct YearCard_Previews: PreviewProvider {
        
         Group{
             
-            YearCard(viewModel: NetWorthViewModel(), year: 2025, data: YearlyData(year: 2025, assets: 2022, liabilities: 22332, netWorth: 23321))
+            YearCard(viewModel: NetWorthViewModel(), year: 2025, data: YearlyData(year: 2025, assets: 2022, liabilities: 22332, netWorth: 23321,assetCategortyTotal: [.furniture:2], liabilityCategortyTotal:  [.other:2]))
                 .background(Color.black.edgesIgnoringSafeArea(.all))
             
             
@@ -478,6 +496,8 @@ struct YearCard_Previews: PreviewProvider {
 }
 
 struct YearSummaryView_Previews: PreviewProvider {
+    
+    var netW: NetWorthViewModel = NetWorthViewModel()
     
     static var previews: some View {
        
