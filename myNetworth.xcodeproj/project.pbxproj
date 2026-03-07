@@ -17,6 +17,11 @@
 		3E3EDAC22EE39F6A001016E5 /* AssetsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E3EDAC12EE39F6A001016E5 /* AssetsView.swift */; };
 		3E3EDAC42EE39F87001016E5 /* LiabilitiesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E3EDAC32EE39F87001016E5 /* LiabilitiesView.swift */; };
 		3E3EDAC82EE39FEC001016E5 /* OverallAnalysisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E3EDAC72EE39FEC001016E5 /* OverallAnalysisView.swift */; };
+		3EAA00012F000001001016E5 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00002F000001001016E5 /* Theme.swift */; };
+		3EAA00032F000002001016E5 /* MigrationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00022F000002001016E5 /* MigrationManager.swift */; };
+		3EAA00052F000003001016E5 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00042F000003001016E5 /* SettingsView.swift */; };
+		3EAA00072F000004001016E5 /* GoalsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00062F000004001016E5 /* GoalsView.swift */; };
+		3EAA00092F000005001016E5 /* DebtPayoffView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00082F000005001016E5 /* DebtPayoffView.swift */; };
 		3EBC70B02EFF1031009DF832 /* CategoryBreakdownTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EBC70AF2EFF1031009DF832 /* CategoryBreakdownTile.swift */; };
 /* End PBXBuildFile section */
 
@@ -32,6 +37,12 @@
 		3E3EDAC12EE39F6A001016E5 /* AssetsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetsView.swift; sourceTree = "<group>"; };
 		3E3EDAC32EE39F87001016E5 /* LiabilitiesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiabilitiesView.swift; sourceTree = "<group>"; };
 		3E3EDAC72EE39FEC001016E5 /* OverallAnalysisView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverallAnalysisView.swift; sourceTree = "<group>"; };
+		3E8D7E1E2F5B87DC00C7215D /* myNetworthRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = myNetworthRelease.entitlements; sourceTree = "<group>"; };
+		3EAA00002F000001001016E5 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		3EAA00022F000002001016E5 /* MigrationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationManager.swift; sourceTree = "<group>"; };
+		3EAA00042F000003001016E5 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		3EAA00062F000004001016E5 /* GoalsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalsView.swift; sourceTree = "<group>"; };
+		3EAA00082F000005001016E5 /* DebtPayoffView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebtPayoffView.swift; sourceTree = "<group>"; };
 		3EBC70AF2EFF1031009DF832 /* CategoryBreakdownTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryBreakdownTile.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -65,6 +76,7 @@
 		3E3EDAAC2EE39D96001016E5 /* myNetworth */ = {
 			isa = PBXGroup;
 			children = (
+				3E8D7E1E2F5B87DC00C7215D /* myNetworthRelease.entitlements */,
 				3E3EDAB12EE39DAB001016E5 /* Model */,
 				3E3EDAB02EE39DA1001016E5 /* View */,
 				3E3EDAB42EE39E4E001016E5 /* View Model */,
@@ -83,6 +95,9 @@
 				3E3EDAC12EE39F6A001016E5 /* AssetsView.swift */,
 				3E3EDABF2EE39F47001016E5 /* AllItemsView.swift */,
 				3E3EDAB72EE39EAB001016E5 /* YearCard.swift */,
+				3EAA00042F000003001016E5 /* SettingsView.swift */,
+				3EAA00062F000004001016E5 /* GoalsView.swift */,
+				3EAA00082F000005001016E5 /* DebtPayoffView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -92,6 +107,8 @@
 			children = (
 				3E3EDAB22EE39E1D001016E5 /* FinancialItem.swift */,
 				3E3EDAAB2EE39D96001016E5 /* myNetworthApp.swift */,
+				3EAA00002F000001001016E5 /* Theme.swift */,
+				3EAA00022F000002001016E5 /* MigrationManager.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -186,6 +203,11 @@
 				3E3EDAC82EE39FEC001016E5 /* OverallAnalysisView.swift in Sources */,
 				3E3EDAB82EE39EAB001016E5 /* YearCard.swift in Sources */,
 				3E3EDAAF2EE39D96001016E5 /* myNetworthApp.swift in Sources */,
+				3EAA00012F000001001016E5 /* Theme.swift in Sources */,
+				3EAA00032F000002001016E5 /* MigrationManager.swift in Sources */,
+				3EAA00052F000003001016E5 /* SettingsView.swift in Sources */,
+				3EAA00072F000004001016E5 /* GoalsView.swift in Sources */,
+				3EAA00092F000005001016E5 /* DebtPayoffView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -364,6 +386,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = myNetworth/myNetworthRelease.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;

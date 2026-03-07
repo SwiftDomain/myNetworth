@@ -6,24 +6,24 @@
 //
 
 import SwiftUI
+import SwiftData
 
 // MARK: - Liabilities View
+
 struct LiabilitiesView: View {
-    @ObservedObject var viewModel: NetWorthViewModel
+
+    var viewModel: NetWorthViewModel
     let year: Int
-    @State private var showingAddSheet = false
-    
-    var yearLiabilities: [FinancialItem] {
-        viewModel.liabilities.filter { $0.year == year }
+
+    private var yearLiabilities: [FinancialItem] {
+        viewModel.filteredItems(viewModel.liabilities.filter { $0.year == year })
     }
-    
+
     var body: some View {
         ZStack {
+            Background(bgColor1: Theme.liabilityGradient1, bgColor2: Theme.liabilityGradient2)
 
-            Background(bgColor1: .bgLiability1, bgColor2: .bgLiability2)
-            
             ScrollView {
-                
                 VStack(spacing: 16) {
                     if yearLiabilities.isEmpty {
                         EmptyStateView(
@@ -37,37 +37,32 @@ struct LiabilitiesView: View {
                             FinancialItemCard(
                                 item: liability,
                                 type: .liability,
+                                currencyCode: viewModel.currencyCode,
                                 onDelete: { viewModel.deleteLiability(liability) }
                             )
                         }
-                        
-                        if !yearLiabilities.isEmpty {
-                            CategoryChartView(
-                                data: viewModel.getCategoryData(for: .liability, year: year),
-                                title: "Liabilities by Category",
-                                color: .red
-                            )
-                        }
+
+                        CategoryChartView(
+                            data: viewModel.getCategoryData(for: .liability, year: year),
+                            title: "Liabilities by Category",
+                            color: .red
+                        )
                     }
                 }
                 .padding()
             }
         }
-        .toolbar {
-            Button {
-                showingAddSheet = true
-            } label: {
-                Image(systemName: "plus.circle.fill")
-                    .font(.title2)
-            }
-        }
-        .sheet(isPresented: $showingAddSheet) {
-            AddItemView(viewModel: viewModel, type: .liability, year: year)
-        }
+        .searchable(text: Bindable(viewModel).searchText, prompt: "Search liabilities")
     }
 }
 
 #Preview {
-
-    LiabilitiesView(viewModel: NetWorthViewModel(), year: 2025)
+    LiabilitiesView(
+        viewModel: NetWorthViewModel(modelContext: try! ModelContainer(
+            for: FinancialItem.self, TrackedYear.self, UserSettings.self,
+            Goal.self, RecurringItem.self, Milestone.self, CustomCategory.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        ).mainContext),
+        year: 2025
+    )
 }

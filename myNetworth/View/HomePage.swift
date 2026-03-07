@@ -1,55 +1,156 @@
 //
-//  ContentView.swift
+//  HomePage.swift
 //  myNetworth
 //
 //  Created by BeastMode on 12/5/25.
 //
+
 import SwiftUI
+import SwiftData
 import Charts
+import LocalAuthentication
 
 // MARK: - Main View (Year Selection)
+
 struct HomePage: View {
-    
-    @StateObject private var viewModel = NetWorthViewModel()
-    
-    @State private var showingAddYear = false
-    @State private var newYear = Calendar.current.component(.year, from: Date())
-    
-    
+
+    @Environment(\.modelContext) private var modelContext
+    @State private var viewModel: NetWorthViewModel?
+    @State private var isUnlocked = false
+
     var body: some View {
-        
-        NavigationView {
+        Group {
+            if let viewModel {
+                if viewModel.settings.requireBiometricLock && !isUnlocked {
+                    BiometricLockView(isUnlocked: $isUnlocked)
+                } else {
+                    HomePageContent(viewModel: viewModel)
+                }
+            } else {
+                ProgressView()
+            }
+        }
+        .preferredColorScheme(viewModel?.resolvedColorScheme)
+        .task {
+            if viewModel == nil {
+                viewModel = NetWorthViewModel(modelContext: modelContext)
+            }
+        }
+    }
+}
+
+// MARK: - Biometric Lock View
+
+struct BiometricLockView: View {
+    @Binding var isUnlocked: Bool
+    @State private var authError: String?
+
+    var body: some View {
+        ZStack {
+            Background(bgColor1: Theme.mainGradient1, bgColor2: Theme.mainGradient2)
+
+            VStack(spacing: 24) {
+                Image(systemName: "faceid")
+                    .font(.system(size: 60))
+                    .foregroundStyle(.blue)
+
+                Text("myNetworth")
+                    .font(.largeTitle)
+                    .bold()
+                    .foregroundStyle(Theme.textPrimary)
+
+                Text("Authentication required")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.textSecondary)
+
+                if let authError {
+                    Text(authError)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+
+                Button("Unlock", systemImage: "lock.open.fill") {
+                    authenticate()
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+        .task {
+            authenticate()
+        }
+    }
+
+    private func authenticate() {
+        let context = LAContext()
+        var error: NSError?
+
+        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
+            // Biometrics not available, allow access
+            isUnlocked = true
+            return
+        }
+
+        context.evaluatePolicy(
+            .deviceOwnerAuthenticationWithBiometrics,
+            localizedReason: "Unlock your net worth data"
+        ) { success, evaluationError in
+            if success {
+                isUnlocked = true
+            } else {
+                authError = evaluationError?.localizedDescription
+            }
+        }
+    }
+}
+
+// MARK: - Home Page Content
+
+struct HomePageContent: View {
+
+    var viewModel: NetWorthViewModel
+    @State private var showingAddYear = false
+    @State private var showingSettings = false
+    @State private var newYear = Calendar.current.component(.year, from: Date())
+    @State private var navigationPath = NavigationPath()
+
+    var body: some View {
+        NavigationStack(path: $navigationPath) {
             ZStack {
-                
-                Background(bgColor1: .bgMain1, bgColor2: .bgMain2)
-                
+                Background(bgColor1: Theme.mainGradient1, bgColor2: Theme.mainGradient2)
+
                 ScrollView {
                     VStack(spacing: 20) {
                         // Header
                         VStack(spacing: 8) {
                             Image(systemName: "chart.line.uptrend.xyaxis")
-                                .font(.system(size: 60))
-                                .foregroundColor(.blue.opacity(0.8))
-                            
+                                .font(.largeTitle)
+                                .foregroundStyle(.blue.opacity(0.8))
+
                             Text("Net Worth Tracker")
-                                .font(.system(size: 32, weight: .bold))
-                                .foregroundColor(.white)
-                            
+                                .font(.largeTitle)
+                                .bold()
+                                .foregroundStyle(Theme.textPrimary)
+
                             Text("Track your financial journey year by year")
                                 .font(.subheadline)
-                                .foregroundColor(.white.opacity(0.7))
-                            
+                                .foregroundStyle(Theme.textSecondary)
+
                             Text("Family Friendly")
                                 .font(.caption)
-                                .foregroundColor(.blue.opacity(0.8))
+                                .foregroundStyle(.blue.opacity(0.8))
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
                                 .background(Color.blue.opacity(0.2))
-                                .cornerRadius(8)
+                                .clipShape(.rect(cornerRadius: 8))
                         }
                         .padding(.top, 40)
                         .padding(.bottom, 20)
-                        
+
+                        // Active Goals Preview
+                        if !viewModel.goals.filter({ !$0.isAchieved }).isEmpty {
+                            GoalPreviewCard(viewModel: viewModel)
+                        }
+
                         // Years Grid
                         if viewModel.years.isEmpty {
                             EmptyStateView(
@@ -61,10 +162,12 @@ struct HomePage: View {
                         } else {
                             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                                 ForEach(viewModel.years, id: \.self) { year in
-                                    NavigationLink(destination: YearDetailView(viewModel: viewModel, year: year)) {
-                                        
-                                        YearCard(viewModel: viewModel, year: year, data: viewModel.getYearData(for: year))
-                                        
+                                    NavigationLink(value: year) {
+                                        YearCard(
+                                            viewModel: viewModel,
+                                            year: year,
+                                            data: viewModel.getYearData(for: year)
+                                        )
                                     }
                                     .contextMenu {
                                         Button(role: .destructive) {
@@ -81,169 +184,205 @@ struct HomePage: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(for: Int.self) { year in
+                YearDetailView(viewModel: viewModel, year: year)
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showingAddYear = true
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title2)
-                            .foregroundColor(.blue)
+                    HStack(spacing: 12) {
+                        Button("Settings", systemImage: "gearshape.fill") {
+                            showingSettings = true
+                        }
+                        .foregroundStyle(.blue)
+
+                        Button("Add Year", systemImage: "plus.circle.fill") {
+                            showingAddYear = true
+                        }
+                        .foregroundStyle(.blue)
                     }
                 }
-                
+
                 ToolbarItem(placement: .navigationBarLeading) {
                     HStack(spacing: 12) {
                         if !viewModel.years.isEmpty {
-                            NavigationLink(destination: OverallAnalysisView(viewModel: viewModel)) {
+                            NavigationLink {
+                                OverallAnalysisView(viewModel: viewModel)
+                            } label: {
                                 Image(systemName: "chart.bar.fill")
                                     .font(.title3)
-                                    .foregroundColor(.blue)
+                                    .foregroundStyle(.blue)
                             }
                         }
-                        
-                        Button {
-                            viewModel.refreshData()
-                        } label: {
-                            Image(systemName: "arrow.clockwise")
-                                .font(.title3)
-                                .foregroundColor(.blue)
+
+                        if !viewModel.goals.isEmpty {
+                            NavigationLink {
+                                GoalsListView(viewModel: viewModel)
+                            } label: {
+                                Image(systemName: "target")
+                                    .font(.title3)
+                                    .foregroundStyle(.blue)
+                            }
                         }
                     }
                 }
             }
             .sheet(isPresented: $showingAddYear) {
-                AddYearView(viewModel: viewModel, newYear: $newYear)
+                AddYearView(viewModel: viewModel, newYear: $newYear) { addedYear in
+                    navigationPath.append(addedYear)
+                }
             }
-            .onAppear {
-                // Refresh data when view appears to sync with other users
-                viewModel.refreshData()
+            .sheet(isPresented: $showingSettings) {
+                SettingsView(viewModel: viewModel)
             }
         }
     }
 }
 
+// MARK: - Goal Preview Card
+
+struct GoalPreviewCard: View {
+    var viewModel: NetWorthViewModel
+
+    private var activeGoals: [Goal] {
+        viewModel.goals.filter { !$0.isAchieved }
+    }
+
+    var body: some View {
+        if let goal = activeGoals.first {
+            let progress = viewModel.goalProgress(for: goal)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Image(systemName: "target")
+                        .foregroundStyle(.blue)
+                    Text(goal.title)
+                        .font(.headline)
+                        .foregroundStyle(Theme.textPrimary)
+                    Spacer()
+                    Text(goal.targetAmount, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.textSecondary)
+                }
+
+                ProgressView(value: min(max(progress, 0), 1))
+                    .tint(progress >= 1 ? .green : .blue)
+
+                Text("\(Int(progress * 100))% complete")
+                    .font(.caption)
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            .padding()
+            .background(Theme.cardBackground)
+            .clipShape(.rect(cornerRadius: 12))
+        }
+    }
+}
+
+// MARK: - Empty State
 
 struct EmptyStateView: View {
     let icon: String
     let message: String
     let subMessage: String
-    
+
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: icon)
-                .font(.system(size: 60))
-                .foregroundColor(.white.opacity(0.3))
-            
+                .font(.largeTitle)
+                .foregroundStyle(Theme.textPrimary.opacity(0.3))
+
             Text(message)
                 .font(.title2)
                 .fontWeight(.semibold)
-                .foregroundColor(.white)
-            
+                .foregroundStyle(Theme.textPrimary)
+
             Text(subMessage)
                 .font(.subheadline)
-                .foregroundColor(.white.opacity(0.7))
+                .foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center)
         }
     }
 }
 
-
 // MARK: - Add Item View
+
 struct AddItemView: View {
-    
-    @ObservedObject var viewModel: NetWorthViewModel
-    @Environment(\.dismiss) var dismiss
-    
+
+    var viewModel: NetWorthViewModel
+    @Environment(\.dismiss) private var dismiss
+
     @State private var name = ""
     @State private var amount = 0
     @State private var selectedCategory = ""
-    
+    @State private var selectedMonth = 0
+
     let type: ItemType
     let year: Int
-    
-    var categories: [String] {
-        type == .asset ? AssetCategories.allCases.map(\.rawValue) : LiabilityCategories.allCases.map(\.rawValue)
+
+    private var categories: [String] {
+        viewModel.allCategoryNames(for: type)
     }
-    
+
     var body: some View {
-        
         ZStack {
-            
-            Background(bgColor1: type == .asset ? .bgAsset1 : .bgLiability1, bgColor2: type == .asset ? .bgAsset2 : .bgAsset2)
-            
-            NavigationView {
-                
-                VStack{
-                    
+            Background(
+                bgColor1: type == .asset ? Theme.assetGradient1 : Theme.liabilityGradient1,
+                bgColor2: type == .asset ? Theme.assetGradient2 : Theme.liabilityGradient2
+            )
+
+            NavigationStack {
+                VStack {
                     // Header
                     VStack(spacing: 8) {
                         Image(systemName: "chart.line.uptrend.xyaxis")
-                            .font(.system(size: 60))
-                            .foregroundColor(.blue.opacity(0.8))
-                        
+                            .font(.largeTitle)
+                            .foregroundStyle(.blue.opacity(0.8))
+
                         Text(type == .asset ? "Add Asset" : "Add Liability")
-                            .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(.white)
-                        
+                            .font(.largeTitle)
+                            .bold()
+                            .foregroundStyle(Theme.textPrimary)
+
                         Text("Track your financial journey")
                             .font(.subheadline)
-                            .foregroundColor(.white.opacity(0.7))
-                        
+                            .foregroundStyle(Theme.textSecondary)
+
                         Text(type == .asset ? "New Asset" : "New Liability")
                             .font(.caption)
-                            .foregroundColor(.blue.opacity(0.8))
+                            .foregroundStyle(.blue.opacity(0.8))
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
                             .background(Color.blue.opacity(0.2))
-                            .cornerRadius(8)
+                            .clipShape(.rect(cornerRadius: 8))
                     }
                     .padding(.bottom, 20)
-                    
-                    /* New Asset Card */
+
+                    // Form Card
                     VStack(spacing: 20) {
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Name")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.white)
-                            
+                        FormField(label: "Name") {
                             TextField("Name", text: $name)
                                 .textFieldStyle(.plain)
                                 .padding()
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .cornerRadius(10)
+                                .clipShape(.rect(cornerRadius: 10))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 10)
                                         .stroke(Color(red: 0.4, green: 0.6, blue: 0.85), lineWidth: 1)
                                 )
                         }
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Amount")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.white)
 
-                            TextField("Amount", value: $amount,format: .number)
+                        FormField(label: "Amount") {
+                            TextField("Amount", value: $amount, format: .number)
                                 .keyboardType(.numberPad)
                                 .padding()
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .cornerRadius(10)
+                                .clipShape(.rect(cornerRadius: 10))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 10)
                                         .stroke(Color(red: 0.4, green: 0.6, blue: 0.85), lineWidth: 1)
                                 )
-                            
                         }
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Department")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.white)
 
+                        FormField(label: "Category") {
                             Picker("Category", selection: $selectedCategory) {
                                 Text("Select category").tag("")
                                 ForEach(categories, id: \.self) { category in
@@ -254,7 +393,25 @@ struct AddItemView: View {
                             .padding()
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color.white)
-                            .cornerRadius(10)
+                            .clipShape(.rect(cornerRadius: 10))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(Color(red: 0.4, green: 0.6, blue: 0.85), lineWidth: 1)
+                            )
+                        }
+
+                        FormField(label: "Month (optional)") {
+                            Picker("Month", selection: $selectedMonth) {
+                                Text("Yearly (no specific month)").tag(0)
+                                ForEach(1...12, id: \.self) { month in
+                                    Text(Calendar.current.monthSymbols[month - 1]).tag(month)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.white)
+                            .clipShape(.rect(cornerRadius: 10))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 10)
                                     .stroke(Color(red: 0.4, green: 0.6, blue: 0.85), lineWidth: 1)
@@ -264,12 +421,13 @@ struct AddItemView: View {
                     .padding()
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(Color.white.opacity(0.1))
+                            .fill(Theme.cardBackground)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 16)
-                                    .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+                                    .stroke(Theme.cardBorder, lineWidth: 1)
                             )
                     )
+
                     Spacer()
                 }
                 .padding()
@@ -277,72 +435,67 @@ struct AddItemView: View {
                 .navigationTitle("")
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        
-                        Button {
+                        Button("Cancel", systemImage: "xmark.circle.fill") {
                             dismiss()
-                        } label: {
-                            Image(systemName:"xmark.circle.fill")
-                                .font(.title3)
-                                .foregroundColor(.blue)
                         }
-                        
+                        .foregroundStyle(.blue)
                     }
                     ToolbarItem(placement: .confirmationAction) {
-                        
-                        Button {
-                            guard !name.isEmpty, amount > 0, !selectedCategory.isEmpty else { return }
-                            
+                        let isValid = !name.isEmpty && amount > 0 && !selectedCategory.isEmpty
+                        Button("Save", systemImage: isValid ? "checkmark.circle.fill" : "checkmark.circle") {
+                            guard isValid else { return }
                             let item = FinancialItem(
                                 name: name,
                                 amount: amount,
                                 year: year,
-                                category: selectedCategory
+                                month: selectedMonth,
+                                category: selectedCategory,
+                                itemType: type == .asset ? "asset" : "liability"
                             )
-                            
-                            if type == .asset {
-                                viewModel.addAsset(item)
-                            } else {
-                                viewModel.addLiability(item)
-                            }
-                            
+                            viewModel.addItem(item)
                             dismiss()
-                        } label: {
-                            Image(systemName: (name.isEmpty || amount == 0 || selectedCategory.isEmpty) ? "checkmark.circle" : "checkmark.circle.fill")
-                                .font(.title3)
-                                .foregroundColor((name.isEmpty || amount == 0 || selectedCategory.isEmpty) ? .gray : .blue)
                         }
-                        .disabled(name.isEmpty || amount == 0 || selectedCategory.isEmpty)
+                        .foregroundStyle(isValid ? .blue : .gray)
+                        .disabled(!isValid)
                     }
                 }
             }
         }
     }
-    
-    private var numberFormatter: NumberFormatter {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.groupingSeparator = ","
-        formatter.groupingSize = 3
-        return formatter
+}
+
+// MARK: - Form Field Helper
+
+struct FormField<Content: View>: View {
+    let label: String
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(label)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundStyle(Theme.textPrimary)
+            content
+        }
     }
 }
+
+// MARK: - Category Chart
 
 struct CategoryChartView: View {
     let data: [(String, Int)]
     let title: String
     let color: Color
-    
+
     var body: some View {
-        
         VStack(alignment: .leading, spacing: 12) {
-            
             Text(title)
                 .font(.headline)
-                .foregroundColor(.black)
+                .foregroundStyle(.primary)
                 .padding()
-            
+
             if !data.isEmpty {
-                
                 Chart(data, id: \.0) { item in
                     SectorMark(
                         angle: .value("Amount", item.1),
@@ -350,25 +503,23 @@ struct CategoryChartView: View {
                         angularInset: 2
                     )
                     .foregroundStyle(by: .value("Category", item.0))
-                    
                 }
                 .scaledToFit()
-                
             }
         }
         .padding()
-        .background(Color.white.opacity(0.1))
-        .cornerRadius(16)
+        .background(Theme.cardBackground)
+        .clipShape(.rect(cornerRadius: 16))
     }
 }
 
+// MARK: - Background
+
 struct Background: View {
-    
-    let bgColor1: Color //= Color(red: 0.05, green: 0.1, blue: 0.2)
-    let bgColor2: Color //= Color(red: 0.1, green: 0.15, blue: 0.3)
-    
+    let bgColor1: Color
+    let bgColor2: Color
+
     var body: some View {
-        
         LinearGradient(
             colors: [bgColor1, bgColor2],
             startPoint: .topLeading,
@@ -378,43 +529,20 @@ struct Background: View {
     }
 }
 
+// MARK: - Previews
 
-// This is a reusable number formatter
-extension Formatter {
-    static let zeroSymbol: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.zeroSymbol  = ""     // Show empty string instead of zero
-        return formatter
-    }()
+#Preview("Home Page") {
+    HomePage()
+        .modelContainer(for: [
+            FinancialItem.self, TrackedYear.self, UserSettings.self,
+            Goal.self, RecurringItem.self, Milestone.self, CustomCategory.self,
+        ], inMemory: true)
 }
 
-
-
-// MARK: - Preview
-struct HomePage2_Previews: PreviewProvider {
-    
-    static var previews: some View {
-        
-        HomePage()
-        
-    }
-}
-
-struct CategoryChartView_Previews: PreviewProvider {
-    
-    static var previews: some View {
-        
-        CategoryChartView(data: [("Car", 50), ("House", 30), ("Credit Cared", 50), ("Jewerly", 30)], title: "Test Title", color: .black)
-        
-    }
-}
-
-
-struct AddItemView_Previews: PreviewProvider {
-    
-    static var previews: some View {
-        
-        AddItemView(viewModel: NetWorthViewModel(), type: .asset, year: 2025)
-        
-    }
+#Preview("Category Chart") {
+    CategoryChartView(
+        data: [("Car", 50), ("House", 30), ("Credit Card", 50), ("Jewelry", 30)],
+        title: "Test Title",
+        color: .black
+    )
 }

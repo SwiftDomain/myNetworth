@@ -5,132 +5,129 @@
 //  Created by BeastMode on 12/26/25.
 //
 
-
 import SwiftUI
 import Charts
 
 // MARK: - Category Breakdown Tile
+
 struct CategoryBreakdownTile: View {
     let yearData: YearlyData
     let type: ItemType
-    
+    var currencyCode: String = "USD"
+
     private var categories: [(String, Int, Color)] {
         switch type {
         case .asset:
-            return yearData.assetCategortyTotal
+            return yearData.assetCategoryTotal
                 .filter { $0.value > 0 }
                 .sorted { $0.value > $1.value }
-                .map { (key, value) in
-                    let category = AssetCategories(rawValue: key.rawValue) ?? .other
-                    return (key.rawValue, value, category.assetColor)
+                .map { key, value in
+                    (key.rawValue, value, key.assetColor)
                 }
         case .liability:
-            return yearData.liabilityCategortyTotal
+            return yearData.liabilityCategoryTotal
                 .filter { $0.value > 0 }
                 .sorted { $0.value > $1.value }
-                .map { (key, value) in
-                    let category = LiabilityCategories(rawValue: key.rawValue) ?? .other
-                    return (key.rawValue, value, category.liabilityColor)
+                .map { key, value in
+                    (key.rawValue, value, key.liabilityColor)
                 }
         }
     }
-    
+
     private var title: String {
         type == .asset ? "Assets by Category" : "Liabilities by Category"
     }
-    
+
     private var total: Int {
         type == .asset ? yearData.assets : yearData.liabilities
     }
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Header
             Text(title)
                 .font(.headline)
-                .foregroundColor(.white)
-            
+                .foregroundStyle(Theme.textPrimary)
+
             if categories.isEmpty {
                 Text("No \(type == .asset ? "assets" : "liabilities") recorded")
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundStyle(Theme.textSecondary.opacity(0.8))
                     .font(.subheadline)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 20)
             } else {
-                // Category List
                 VStack(spacing: 12) {
                     ForEach(categories, id: \.0) { category, amount, color in
                         CategoryRow(
                             name: category,
                             amount: amount,
                             total: total,
-                            color: color
+                            color: color,
+                            currencyCode: currencyCode
                         )
                     }
                 }
             }
         }
         .padding()
-        .background(Color.white.opacity(0.05))
-        .cornerRadius(16)
+        .background(Theme.subtleBackground)
+        .clipShape(.rect(cornerRadius: 16))
     }
 }
 
 // MARK: - Category Row
+
 struct CategoryRow: View {
     let name: String
     let amount: Int
     let total: Int
     let color: Color
-    
+    var currencyCode: String = "USD"
+
     private var percentage: Double {
         guard total > 0 else { return 0 }
         return Double(amount) / Double(total)
     }
-    
+
     var body: some View {
         VStack(spacing: 6) {
             HStack {
-                // Category name with color indicator
                 HStack(spacing: 8) {
                     Circle()
                         .fill(color)
                         .frame(width: 8, height: 8)
-                    
+
                     Text(name)
                         .font(.subheadline)
-                        .foregroundColor(.white)
+                        .foregroundStyle(Theme.textPrimary)
                 }
-                
+
                 Spacer()
-                
-                // Amount and percentage
+
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text(formatNumber(amount))
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.white)
-                    
+                    Text(amount, format: .currency(code: currencyCode).precision(.fractionLength(0)))
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Theme.textPrimary)
+
                     Text("\(Int(percentage * 100))%")
                         .font(.caption2)
-                        .foregroundColor(.white.opacity(0.6))
+                        .foregroundStyle(Theme.textSecondary.opacity(0.8))
                 }
             }
-            
-            // Progress bar
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    // Background
-                    Rectangle()
-                        .fill(Color.white.opacity(0.1))
-                        .frame(height: 4)
-                        .cornerRadius(2)
-                    
-                    // Foreground
-                    Rectangle()
-                        .fill(color)
-                        .frame(width: geometry.size.width * percentage, height: 4)
-                        .cornerRadius(2)
-                }
+
+            // Progress bar (replaced GeometryReader with scaleEffect)
+            ZStack(alignment: .leading) {
+                Rectangle()
+                    .fill(Color.white.opacity(0.1))
+                    .frame(height: 4)
+                    .clipShape(.rect(cornerRadius: 2))
+
+                Rectangle()
+                    .fill(color)
+                    .frame(height: 4)
+                    .clipShape(.rect(cornerRadius: 2))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .scaleEffect(x: percentage, anchor: .leading)
             }
             .frame(height: 4)
         }

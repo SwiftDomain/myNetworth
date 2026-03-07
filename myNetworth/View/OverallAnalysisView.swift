@@ -6,26 +6,25 @@
 //
 
 import SwiftUI
+import SwiftData
 import Charts
 
 // MARK: - Overall Analysis View
+
 struct OverallAnalysisView: View {
-    @ObservedObject var viewModel: NetWorthViewModel
-    
+    var viewModel: NetWorthViewModel
+
     var body: some View {
         ZStack {
-            
             LinearGradient(
-                colors: [.bgMain1, .bgMain2],
+                colors: [Theme.mainGradient1, Theme.mainGradient2],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
-            
+
             ScrollView {
-                
                 VStack(spacing: 20) {
-                    
                     if viewModel.yearlyData.isEmpty {
                         EmptyStateView(
                             icon: "chart.bar",
@@ -33,69 +32,107 @@ struct OverallAnalysisView: View {
                             subMessage: "Add assets and liabilities to see insights"
                         )
                         .padding(.top, 100)
-                    }
-                    else {
+                    } else {
                         // Net Worth Trend Chart
-                        NetWorthChartView(data: viewModel.yearlyData)
-                        
+                        NetWorthChartView(
+                            data: viewModel.yearlyData,
+                            currencyCode: viewModel.currencyCode
+                        )
+
                         // Assets vs Liabilities Chart
-                        ComparisonChartView(data: viewModel.yearlyData)
-                        
+                        ComparisonChartView(
+                            data: viewModel.yearlyData,
+                            currencyCode: viewModel.currencyCode
+                        )
+
+                        // Debt Payoff Section
+                        NavigationLink {
+                            DebtPayoffView(viewModel: viewModel)
+                        } label: {
+                            HStack {
+                                Image(systemName: "chart.line.downtrend.xyaxis")
+                                    .foregroundStyle(.blue)
+                                Text("Debt Payoff Projections")
+                                    .font(.headline)
+                                    .foregroundStyle(Theme.textPrimary)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .foregroundStyle(Theme.textSecondary)
+                            }
+                            .padding()
+                            .background(Theme.cardBackground)
+                            .clipShape(.rect(cornerRadius: 12))
+                        }
+
                         // Year-by-Year Breakdown
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Year-by-Year Breakdown")
                                 .font(.headline)
-                                .foregroundColor(.white)
-                            
+                                .foregroundStyle(Theme.textPrimary)
+
                             ForEach(viewModel.yearlyData.reversed()) { data in
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Text("\(data.year)")
-                                        .font(.title3)
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.white)
-                                    
+                                    HStack {
+                                        Text("\(data.year)")
+                                            .font(.title3)
+                                            .bold()
+                                            .foregroundStyle(Theme.textPrimary)
+
+                                        Spacer()
+
+                                        if let change = viewModel.percentageChange(for: data.year) {
+                                            HStack(spacing: 2) {
+                                                Image(systemName: change >= 0 ? "arrow.up.right" : "arrow.down.right")
+                                                Text(abs(change), format: .number.precision(.fractionLength(1)))
+                                                Text("%")
+                                            }
+                                            .font(.caption)
+                                            .foregroundStyle(change >= 0 ? Theme.positiveAmount : Theme.negativeAmount)
+                                        }
+                                    }
+
                                     HStack {
                                         VStack(alignment: .leading) {
                                             Text("Assets")
                                                 .font(.caption)
-                                                .foregroundColor(.white.opacity(0.7))
-                                            Text(data.assets, format: .currency(code: "USD").precision(.fractionLength(0)))
+                                                .foregroundStyle(Theme.textSecondary)
+                                            Text(data.assets, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
                                                 .font(.subheadline)
-                                                .foregroundColor(.green)
+                                                .foregroundStyle(Theme.positiveAmount)
                                         }
-                                        
+
                                         Spacer()
-                                        
+
                                         VStack(alignment: .trailing) {
                                             Text("Liabilities")
                                                 .font(.caption)
-                                                .foregroundColor(.white.opacity(0.7))
-                                            Text(data.liabilities, format: .currency(code: "USD").precision(.fractionLength(0)))
+                                                .foregroundStyle(Theme.textSecondary)
+                                            Text(data.liabilities, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
                                                 .font(.subheadline)
-                                                .foregroundColor(.red)
+                                                .foregroundStyle(Theme.negativeAmount)
                                         }
-                                        
+
                                         Spacer()
-                                        
+
                                         VStack(alignment: .trailing) {
                                             Text("Net Worth")
                                                 .font(.caption)
-                                                .foregroundColor(.white.opacity(0.7))
-                                            Text(data.netWorth, format: .currency(code: "USD").precision(.fractionLength(0)))
+                                                .foregroundStyle(Theme.textSecondary)
+                                            Text(data.netWorth, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
                                                 .font(.subheadline)
-                                                .fontWeight(.bold)
-                                                .foregroundColor(.blue)
+                                                .bold()
+                                                .foregroundStyle(.blue)
                                         }
                                     }
                                 }
                                 .padding()
-                                .background(Color.white.opacity(0.1))
-                                .cornerRadius(12)
+                                .background(Theme.cardBackground)
+                                .clipShape(.rect(cornerRadius: 12))
                             }
                         }
                         .padding()
-                        .background(Color.white.opacity(0.05))
-                        .cornerRadius(16)
+                        .background(Theme.subtleBackground)
+                        .clipShape(.rect(cornerRadius: 16))
                     }
                 }
                 .padding()
@@ -106,17 +143,18 @@ struct OverallAnalysisView: View {
     }
 }
 
+// MARK: - Net Worth Chart
+
 struct NetWorthChartView: View {
     let data: [YearlyData]
-    
+    var currencyCode: String = "USD"
+
     var body: some View {
-        
         VStack(alignment: .leading, spacing: 12) {
-            
             Text("Net Worth Over Time")
                 .font(.headline)
-                .foregroundColor(.white)
-            
+                .foregroundStyle(Theme.textPrimary)
+
             Chart(data) { item in
                 LineMark(
                     x: .value("Year", item.year),
@@ -124,8 +162,7 @@ struct NetWorthChartView: View {
                 )
                 .foregroundStyle(.blue)
                 .lineStyle(StrokeStyle(lineWidth: 3))
-                
-                
+
                 PointMark(
                     x: .value("Year", item.year),
                     y: .value("Net Worth", item.netWorth)
@@ -134,80 +171,58 @@ struct NetWorthChartView: View {
             }
             .frame(height: 250)
             .chartXAxis {
-                AxisMarks(position: .automatic) { value in
+                AxisMarks { _ in
                     AxisGridLine()
                     AxisValueLabel()
-                        .foregroundStyle(.white) // Makes X-axis labels white
+                        .foregroundStyle(.white)
                 }
             }
-            .chartYAxis() {
-                AxisMarks(position: .leading) { value in
+            .chartYAxis {
+                AxisMarks(position: .leading) { _ in
                     AxisGridLine()
                     AxisValueLabel()
-                        .foregroundStyle(.white) // Makes Y-axis labels white too
+                        .foregroundStyle(.white)
                 }
             }
-            .chartXScale(domain: 2000...2100)
-
         }
         .padding()
-        .background(Color.white.opacity(0.1))
-        .cornerRadius(16)
+        .background(Theme.cardBackground)
+        .clipShape(.rect(cornerRadius: 16))
     }
 }
 
+// MARK: - Comparison Chart
 
 struct ComparisonChartView: View {
     let data: [YearlyData]
-    
-    var chartData: [(year: Int, category: String, value: Int)] {
+    var currencyCode: String = "USD"
+
+    private var chartData: [(year: Int, category: String, value: Int)] {
         data.flatMap { data in
             [
                 (year: data.year, category: "Assets", value: data.assets),
-                (year: data.year, category: "Liabilities", value: data.liabilities)
+                (year: data.year, category: "Liabilities", value: data.liabilities),
             ]
         }
     }
 
-    let currentYear =  Calendar.current.component(.year, from: Date.now)
-    
     var body: some View {
-        
         VStack(alignment: .leading, spacing: 12) {
-            
-//            Chart(chartData, id: \.year) { dataPoint in
-//                        BarMark(
-//                            x: .value("Month", dataPoint.category), // X-axis by month
-//                            y: .value("Sales", dataPoint.value)   // Y-axis by sales value
-//                        )
-//                        .foregroundStyle(by: .value("Type", dataPoint.type)) // Group by type (Actual/Forecast)
-//                        .position(by: .value("Type", dataPoint.type)) // Crucial for side-by-side
-//                    }
-//                    .chartXAxis { AxisMarks(values: .automatic) } // Standard X-axis
-//                    .padding()
-                
-        
             Text("Assets vs Liabilities")
                 .font(.headline)
-                .foregroundColor(.white)
-            
-           Chart(chartData, id: \.year) { item in
-               
+                .foregroundStyle(Theme.textPrimary)
+
+            Chart(chartData, id: \.year) { item in
                 BarMark(
                     x: .value("Year", item.year),
                     y: .value("Amount", item.value)
                 )
-                .foregroundStyle(by: .value("category", item.category)) // Group by type (Actual/Forecast)
-                .position(by: .value("category", item.category)) // Crucial for side-by-side
-                
+                .foregroundStyle(by: .value("category", item.category))
+                .position(by: .value("category", item.category))
             }
             .frame(height: 250)
-            //.chartYScale(domain: 0...5_000_000)
-            .chartXScale(domain: currentYear-20...currentYear+20)
-            .chartXScale(domain: 2020...2028)
-
             .chartYAxis {
-                AxisMarks(position: .leading, values: .stride(by: 1_000_000)) { value in
+                AxisMarks(position: .leading) { value in
                     AxisGridLine()
                         .foregroundStyle(.white.opacity(0.2))
                     AxisValueLabel {
@@ -220,7 +235,7 @@ struct ComparisonChartView: View {
                 }
             }
             .chartXAxis {
-                AxisMarks(position: .automatic, values: .stride(by: 10)) { value in
+                AxisMarks { _ in
                     AxisValueLabel()
                         .foregroundStyle(.white)
                 }
@@ -232,43 +247,34 @@ struct ComparisonChartView: View {
                             RoundedRectangle(cornerRadius: 2)
                                 .fill(category == "Assets" ? Color.green : Color.red)
                                 .frame(width: 8, height: 8)
-                            
+
                             Text(category)
-                                .foregroundColor(.white)
+                                .foregroundStyle(Theme.textPrimary)
                                 .font(.footnote)
                         }
                     }
                 }
                 .padding(.vertical, 8)
             }
-            .chartForegroundStyleScale([ // Define the specific colors for categories
+            .chartForegroundStyleScale([
                 "Assets": .green,
-                "Liabilities": .red
+                "Liabilities": .red,
             ])
         }
         .padding()
-        .background(Color.white.opacity(0.1))
-        .cornerRadius(16)
+        .background(Theme.cardBackground)
+        .clipShape(.rect(cornerRadius: 16))
     }
 }
 
-func formatNumber(_ number: Int) -> String {
-    let formatter = NumberFormatter()
-    formatter.numberStyle = .decimal
-    formatter.groupingSeparator = ","
-    return formatter.string(from: NSNumber(value: number)) ?? "\(number)"
-}
-
-#Preview{
-    OverallAnalysisView(viewModel: NetWorthViewModel())
-}
-
-struct HomePage_Previews: PreviewProvider {
-    
-    static var previews: some View {
-        
-        HomePage()
-        
+#Preview {
+    NavigationStack {
+        OverallAnalysisView(
+            viewModel: NetWorthViewModel(modelContext: try! ModelContainer(
+                for: FinancialItem.self, TrackedYear.self, UserSettings.self,
+                Goal.self, RecurringItem.self, Milestone.self, CustomCategory.self,
+                configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+            ).mainContext)
+        )
     }
 }
-

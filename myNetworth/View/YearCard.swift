@@ -4,225 +4,214 @@
 //
 //  Created by BeastMode on 12/5/25.
 //
+
 import SwiftUI
+import SwiftData
 import Charts
 
 // MARK: - Year Card
-struct YearCard: View {
-    
-    @ObservedObject var viewModel: NetWorthViewModel
 
+struct YearCard: View {
+
+    var viewModel: NetWorthViewModel
     let year: Int
     let data: YearlyData
-    
-    var yearAssets: [FinancialItem] {
+
+    private var yearAssets: [FinancialItem] {
         viewModel.assets.filter { $0.year == year }
     }
-    
-    var yearLiabilities: [FinancialItem] {
+
+    private var yearLiabilities: [FinancialItem] {
         viewModel.liabilities.filter { $0.year == year }
     }
-    
-    
+
     var body: some View {
-        
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "calendar")
                     .font(.title2)
-                    .foregroundColor(.blue.opacity(0.8))
-                
+                    .foregroundStyle(.blue.opacity(0.8))
+
                 Spacer()
-                
+
                 Text("\(year, format: .number.grouping(.never))")
                     .font(.title)
-                    .fontWeight(.bold)
-                    .foregroundColor(.blue)
+                    .bold()
+                    .foregroundStyle(.blue)
             }
-            
+
             Divider()
                 .background(Color.white.opacity(0.3))
-            
+
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text("Net Worth")
                         .font(.caption)
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundStyle(Theme.textSecondary)
                     Spacer()
                 }
-                
-                Text(data.netWorth, format: .currency(code: "USD").precision(.fractionLength(0)))
+
+                Text(data.netWorth, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
                     .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(data.netWorth >= 0 ? .green : .red)
+                    .bold()
+                    .foregroundStyle(data.netWorth >= 0 ? Theme.positiveAmount : Theme.negativeAmount)
+
+                // Percentage change badge
+                if let change = viewModel.percentageChange(for: year) {
+                    HStack(spacing: 4) {
+                        Image(systemName: change >= 0 ? "arrow.up.right" : "arrow.down.right")
+                        Text(abs(change), format: .number.precision(.fractionLength(1)))
+                        Text("%")
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(change >= 0 ? Theme.positiveAmount : Theme.negativeAmount)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background((change >= 0 ? Theme.positiveAmount : Theme.negativeAmount).opacity(0.2))
+                    .clipShape(.rect(cornerRadius: 6))
+                }
             }
-            
+
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
-                    
-                    
-                    
-                        Text("\(yearAssets.count) Assets")
+                    Text("\(yearAssets.count) Assets")
                         .font(.caption2)
-                    .foregroundColor(.white)
-                    
-                    Text(data.assets, format: .currency(code: "USD").precision(.fractionLength(0)))
+                        .foregroundStyle(Theme.textPrimary)
+
+                    Text(data.assets, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
                         .font(.caption2)
-                        .foregroundColor(.green)
+                        .foregroundStyle(Theme.positiveAmount)
                 }
-                
+
                 Spacer()
-                
+
                 VStack(alignment: .trailing, spacing: 4) {
                     Text("\(yearLiabilities.count) Liabilities")
                         .font(.caption2)
-                    .foregroundColor(.white)
-                    
-                    Text(data.liabilities, format: .currency(code: "USD").precision(.fractionLength(0)))
+                        .foregroundStyle(Theme.textPrimary)
+
+                    Text(data.liabilities, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
                         .font(.caption2)
-                        .foregroundColor(.red)
+                        .foregroundStyle(Theme.negativeAmount)
                 }
             }
         }
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.1))
+                .fill(Theme.cardBackground)
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+                        .stroke(Theme.cardBorder, lineWidth: 1)
                 )
         )
     }
 }
 
+// MARK: - Year Detail View (with Tabs)
 
-// MARK: - Year Detail View (with TabView)
 struct YearDetailView: View {
-    @ObservedObject var viewModel: NetWorthViewModel
+    var viewModel: NetWorthViewModel
     @State private var selectedTab = 0
     @State private var showingAddSheet = false
-   
-    let year: Int
-    
-    var body: some View {
-        
-        TabView(selection: $selectedTab) {
-            
-            YearSummaryView(viewModel: viewModel, year: year)
-                .tabItem {
-                    Label("Summary", systemImage: "chart.pie.fill")
-                }
-                .tag(0)
-            
-            AssetsView(viewModel: viewModel, year: year)
-                .tabItem {
-                    Label("Assets", systemImage: "dollarsign.circle.fill")
-                }
-                .tag(1)
-            
-            LiabilitiesView(viewModel: viewModel, year: year)
-                .tabItem {
-                    Label("Liabilities", systemImage: "creditcard.fill")
-                }
-                .tag(2)
-            
 
+    let year: Int
+
+    var body: some View {
+        TabView(selection: $selectedTab) {
+            Tab("Summary", systemImage: "chart.pie.fill", value: 0) {
+                YearSummaryView(viewModel: viewModel, year: year)
+            }
+
+            Tab("Assets", systemImage: "dollarsign.circle.fill", value: 1) {
+                AssetsView(viewModel: viewModel, year: year)
+            }
+
+            Tab("Liabilities", systemImage: "creditcard.fill", value: 2) {
+                LiabilitiesView(viewModel: viewModel, year: year)
+            }
+
+            Tab("Monthly", systemImage: "calendar.badge.clock", value: 3) {
+                MonthlyBreakdownView(viewModel: viewModel, year: year)
+            }
+
+            Tab("All", systemImage: "list.bullet", value: 4) {
+                AllItemsView(viewModel: viewModel, year: year)
+            }
         }
         .navigationTitle("\(year, format: .number.grouping(.never))")
         .navigationBarTitleDisplayMode(.large)
-        .onAppear {
-            viewModel.refreshData()
-        }
-        .toolbar{
+        .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 if selectedTab == 1 || selectedTab == 2 {
-                  
-                    Button {
+                    Button("Add Item", systemImage: "plus.circle.fill") {
                         showingAddSheet = true
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title2)
-                            .foregroundColor(.blue)
                     }
+                    .foregroundStyle(.blue)
                 }
             }
         }
         .sheet(isPresented: $showingAddSheet) {
-            AddItemView(viewModel: viewModel, type: selectedTab == 1 ? .asset : .liability, year: year)
+            AddItemView(
+                viewModel: viewModel,
+                type: selectedTab == 1 ? .asset : .liability,
+                year: year
+            )
         }
     }
 }
 
 // MARK: - Add Year View
+
 struct AddYearView: View {
-    
-    @ObservedObject var viewModel: NetWorthViewModel
+
+    var viewModel: NetWorthViewModel
     @Binding var newYear: Int
-    @Environment(\.dismiss) var dismiss
-    
-    let years: [Int] = {
-            return Array(2020...2070)
-        }()
-    
+    var onYearAdded: ((Int) -> Void)?
+    @Environment(\.dismiss) private var dismiss
+
     var body: some View {
-        
-        NavigationView {
-            
+        NavigationStack {
             ZStack {
-                
                 Color(red: 0.05, green: 0.1, blue: 0.2)
                     .ignoresSafeArea()
-                
+
                 VStack(spacing: 30) {
                     Image(systemName: "calendar.badge.plus")
                         .font(.system(size: 80))
-                        .foregroundColor(.blue.opacity(0.8))
-                    
+                        .foregroundStyle(.blue.opacity(0.8))
+
                     Text("Add New Year")
                         .font(.title)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                    
+                        .bold()
+                        .foregroundStyle(Theme.textPrimary)
+
                     VStack(spacing: 16) {
-//                        Stepper(value: $newYear, in: 2000...2100) {
-//                            HStack {
-//                                Spacer()
-//                                Text("\(newYear, format: .number.grouping(.never))"
-//                                   )
-//                                    .font(.system(size: 48, weight: .bold))
-//                                    .foregroundColor(.blue)
-//                            }
-//                        }
-//                        .padding()
-//                        .background(Color.white.opacity(0.1))
-//                        .cornerRadius(12)
-                        
                         ScrollableYearPicker(newYear: $newYear)
 
-                        
                         if viewModel.years.contains(newYear) {
                             HStack {
                                 Image(systemName: "exclamationmark.triangle.fill")
-                                    .foregroundColor(.orange)
+                                    .foregroundStyle(.orange)
                                 Text("This year already exists")
                                     .font(.caption)
-                                    .foregroundColor(.orange)
+                                    .foregroundStyle(.orange)
                             }
                         }
                     }
                     .padding(.horizontal)
-                    
-                    
+
                     Spacer()
-                    
+
                     Button {
-                        viewModel.addYear(newYear)
+                        let yearToAdd = newYear
+                        viewModel.addYear(yearToAdd)
                         dismiss()
+                        onYearAdded?(yearToAdd)
                     } label: {
                         Text("Add Year")
                             .font(.headline)
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(
@@ -232,7 +221,7 @@ struct AddYearView: View {
                                     endPoint: .trailing
                                 )
                             )
-                            .cornerRadius(12)
+                            .clipShape(.rect(cornerRadius: 12))
                     }
                     .disabled(viewModel.years.contains(newYear))
                     .opacity(viewModel.years.contains(newYear) ? 0.5 : 1)
@@ -244,37 +233,33 @@ struct AddYearView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.blue)
                 }
             }
         }
     }
 }
 
+// MARK: - Scrollable Year Picker
+
 struct ScrollableYearPicker: View {
-    
-    //@State private var selectedYear = Calendar.current.component(.year, from: Date())
+
     @Binding var newYear: Int
-    
-    let years: [Int] = {
+
+    private let years: [Int] = {
         let currentYear = Calendar.current.component(.year, from: Date())
         return Array((currentYear - 20)...(currentYear + 10))
     }()
-    
+
     var body: some View {
-        
         VStack(spacing: 24) {
-            
-            
             Text("\(newYear)")
                 .font(.largeTitle)
                 .bold()
-                .foregroundColor(.blue)
-            
+                .foregroundStyle(.blue)
+
             ScrollViewReader { proxy in
-                
-                ScrollView(.horizontal, showsIndicators: false) {
-                    
+                ScrollView(.horizontal) {
                     HStack(spacing: 12) {
                         ForEach(years, id: \.self) { year in
                             Button {
@@ -284,7 +269,7 @@ struct ScrollableYearPicker: View {
                             } label: {
                                 Text(String(year))
                                     .font(.headline)
-                                    .foregroundColor(newYear == year ? .white : .gray)
+                                    .foregroundStyle(newYear == year ? .white : .gray)
                                     .padding(.horizontal, 20)
                                     .padding(.vertical, 12)
                                     .background(
@@ -301,6 +286,7 @@ struct ScrollableYearPicker: View {
                     }
                     .padding()
                 }
+                .scrollIndicators(.hidden)
                 .onAppear {
                     proxy.scrollTo(newYear, anchor: .center)
                 }
@@ -308,126 +294,118 @@ struct ScrollableYearPicker: View {
         }
     }
 }
-     
 
 // MARK: - Year Summary View
+
 struct YearSummaryView: View {
-    
-    @ObservedObject var viewModel: NetWorthViewModel
-    
+
+    var viewModel: NetWorthViewModel
     let year: Int
-    
-    var yearData: YearlyData {
+
+    private var yearData: YearlyData {
         viewModel.getYearData(for: year)
     }
-    
+
     var body: some View {
         ZStack {
-            
             LinearGradient(
                 colors: [Color(red: 0.05, green: 0.15, blue: 0.35), Color(red: 0.1, green: 0.25, blue: 0.45)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
-            
+
             ScrollView {
-                
                 VStack(spacing: 20) {
-                    
-                    VStack(spacing: 20){
-                        // Summary Cards
+                    // Summary Cards
+                    VStack(spacing: 20) {
                         SummaryCard(
                             title: "Net Worth",
                             amount: yearData.netWorth,
+                            currencyCode: viewModel.currencyCode,
                             itemType: "Networth",
                             isLarge: true
                         )
-                        
+
                         HStack(spacing: 12) {
-                            
                             SummaryCard(
                                 title: "Assets",
                                 amount: yearData.assets,
+                                currencyCode: viewModel.currencyCode,
                                 itemType: "assets",
                                 isLarge: false
                             )
-                            
-                            
+
                             SummaryCard(
                                 title: "Liabilities",
                                 amount: yearData.liabilities,
+                                currencyCode: viewModel.currencyCode,
                                 itemType: "liabilities",
                                 isLarge: false
                             )
-                            
                         }
                     }
                     .padding()
-                        .background(Color.white.opacity(0.05))
-                        .cornerRadius(16)
-                    
-                    
+                    .background(Theme.subtleBackground)
+                    .clipShape(.rect(cornerRadius: 16))
+
                     // Assets Breakdown
                     CategoryBreakdownTile(
                         yearData: yearData,
-                        type: .asset
+                        type: .asset,
+                        currencyCode: viewModel.currencyCode
                     )
 
                     // Liabilities Breakdown
                     CategoryBreakdownTile(
                         yearData: yearData,
-                        type: .liability
+                        type: .liability,
+                        currencyCode: viewModel.currencyCode
                     )
-                    
-                    
-                    
-                    
-                    
-                    // Assets vs Liabilities Comparison
+
+                    // Financial Overview Chart
                     VStack(alignment: .leading, spacing: 12) {
-                        
                         Text("Financial Overview")
                             .font(.headline)
-                            .foregroundColor(.white)
-                        
+                            .foregroundStyle(Theme.textPrimary)
+
                         Chart {
                             BarMark(
                                 x: .value("Type", "Assets"),
                                 y: .value("Amount", yearData.assets)
                             )
-                            .foregroundStyle(.green)
-                            
+                            .foregroundStyle(Theme.positiveAmount)
+
                             BarMark(
                                 x: .value("Type", "Liabilities"),
                                 y: .value("Amount", yearData.liabilities)
                             )
-                            .foregroundStyle(.red)
+                            .foregroundStyle(Theme.negativeAmount)
                         }
                         .frame(height: 250)
                         .chartYAxis {
-                            AxisMarks(position: .leading, values: .stride(by: 500_000)) { value in
+                            AxisMarks(position: .leading) { value in
                                 AxisGridLine()
                                     .foregroundStyle(.white.opacity(0.2))
                                 AxisValueLabel {
                                     if let intValue = value.as(Int.self) {
                                         Text(formatNumber(intValue))
                                             .foregroundStyle(.white)
-                                            .font(.caption2.weight(.light))
+                                            .font(.caption2)
                                     }
                                 }
                             }
                         }
                         .chartXAxis {
-                            AxisMarks(position: .automatic, values: .stride(by: 20)) { value in
+                            AxisMarks { _ in
                                 AxisValueLabel()
                                     .foregroundStyle(.white)
                             }
                         }
                     }
                     .padding()
-                    .background(Color.white.opacity(0.05))
-                    .cornerRadius(16)
+                    .background(Theme.subtleBackground)
+                    .clipShape(.rect(cornerRadius: 16))
                 }
                 .padding()
             }
@@ -435,79 +413,226 @@ struct YearSummaryView: View {
     }
 }
 
+// MARK: - Summary Card
+
 struct SummaryCard: View {
     let title: String
     let amount: Int
+    let currencyCode: String
     let itemType: String
     var isLarge: Bool = false
-    
+
     var body: some View {
-        
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
                 .font(isLarge ? .title : .callout)
-                .foregroundColor(.white.opacity(1))
-            
-            Text(amount, format: .currency(code: "USD").precision(.fractionLength(0)))
+                .foregroundStyle(Theme.textPrimary)
+
+            Text(amount, format: .currency(code: currencyCode).precision(.fractionLength(0)))
                 .font(isLarge ? .title : .subheadline)
-                .fontWeight(.bold)
-                .foregroundColor(itemType=="assets" ? .green: itemType == "liabilities" ? .red : amount > 0 ? .green : .red)
+                .bold()
+                .foregroundStyle(amountColor)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
-}
 
-// MARK: - Preview
-
-struct AddYearView_Previews: PreviewProvider {
-    
-    static var previews: some View {
-        
-        let netW: NetWorthViewModel = NetWorthViewModel()
-        AddYearView(viewModel: netW, newYear: .constant(2024))
-        
-    }
-}
-
-struct YearDetailView_Previews: PreviewProvider {
-    
-    static var previews: some View {
-        
-        let netW: NetWorthViewModel = NetWorthViewModel()
-
-        YearDetailView(viewModel: netW, year: 2025)
-        
-    }
-}
-
-struct YearCard_Previews: PreviewProvider {
-    
-    static var previews: some View {
-       
-        Group{
-            
-            YearCard(viewModel: NetWorthViewModel(), year: 2025, data: YearlyData(year: 2025, assets: 2022, liabilities: 22332, netWorth: 23321,assetCategortyTotal: [.furniture:2], liabilityCategortyTotal:  [.other:2]))
-                .background(Color.black.edgesIgnoringSafeArea(.all))
-            
-            
+    private var amountColor: Color {
+        switch itemType {
+        case "assets": Theme.positiveAmount
+        case "liabilities": Theme.negativeAmount
+        default: amount > 0 ? Theme.positiveAmount : Theme.negativeAmount
         }
-        
     }
 }
 
-struct YearSummaryView_Previews: PreviewProvider {
-    
-    var netW: NetWorthViewModel = NetWorthViewModel()
-    
-    static var previews: some View {
-       
-        Group{
-            
-            YearSummaryView(viewModel: NetWorthViewModel(), year: 2025)
-            
+// MARK: - Monthly Breakdown View
+
+struct MonthlyBreakdownView: View {
+
+    var viewModel: NetWorthViewModel
+    let year: Int
+
+    private var data: [(month: Int, assets: Int, liabilities: Int, netWorth: Int)] {
+        viewModel.monthlyData(for: year)
+    }
+
+    private var hasMonthlyData: Bool {
+        data.contains { $0.assets > 0 || $0.liabilities > 0 }
+    }
+
+    var body: some View {
+        ZStack {
+            Background(bgColor1: Theme.mainGradient1, bgColor2: Theme.mainGradient2)
+
+            ScrollView {
+                VStack(spacing: 20) {
+                    if hasMonthlyData {
+                        // YTD Summary
+                        let ytdAssets = data.reduce(0) { $0 + $1.assets }
+                        let ytdLiabilities = data.reduce(0) { $0 + $1.liabilities }
+                        let ytdNetWorth = ytdAssets - ytdLiabilities
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Year-to-Date Summary")
+                                .font(.headline)
+                                .foregroundStyle(Theme.textPrimary)
+
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text("Total Assets")
+                                        .font(.caption)
+                                        .foregroundStyle(Theme.textSecondary)
+                                    Text(ytdAssets, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
+                                        .bold()
+                                        .foregroundStyle(Theme.positiveAmount)
+                                }
+
+                                Spacer()
+
+                                VStack(alignment: .trailing) {
+                                    Text("Total Liabilities")
+                                        .font(.caption)
+                                        .foregroundStyle(Theme.textSecondary)
+                                    Text(ytdLiabilities, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
+                                        .bold()
+                                        .foregroundStyle(Theme.negativeAmount)
+                                }
+                            }
+
+                            Divider().background(Color.white.opacity(0.3))
+
+                            HStack {
+                                Text("Net Worth (Monthly)")
+                                    .font(.caption)
+                                    .foregroundStyle(Theme.textSecondary)
+                                Spacer()
+                                Text(ytdNetWorth, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
+                                    .bold()
+                                    .foregroundStyle(ytdNetWorth >= 0 ? Theme.positiveAmount : Theme.negativeAmount)
+                            }
+                        }
+                        .padding()
+                        .background(Theme.cardBackground)
+                        .clipShape(.rect(cornerRadius: 12))
+
+                        // Monthly Trend Chart
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Monthly Net Worth Trend")
+                                .font(.headline)
+                                .foregroundStyle(Theme.textPrimary)
+
+                            let chartData = data.filter { $0.assets > 0 || $0.liabilities > 0 }
+                            if !chartData.isEmpty {
+                                Chart(chartData, id: \.month) { item in
+                                    LineMark(
+                                        x: .value("Month", Calendar.current.shortMonthSymbols[item.month - 1]),
+                                        y: .value("Net Worth", item.netWorth)
+                                    )
+                                    .foregroundStyle(.blue)
+
+                                    PointMark(
+                                        x: .value("Month", Calendar.current.shortMonthSymbols[item.month - 1]),
+                                        y: .value("Net Worth", item.netWorth)
+                                    )
+                                    .foregroundStyle(.blue)
+                                }
+                                .frame(height: 200)
+                                .chartYAxis {
+                                    AxisMarks(position: .leading) { value in
+                                        AxisGridLine()
+                                            .foregroundStyle(.white.opacity(0.2))
+                                        AxisValueLabel()
+                                            .foregroundStyle(.white)
+                                    }
+                                }
+                                .chartXAxis {
+                                    AxisMarks { _ in
+                                        AxisValueLabel()
+                                            .foregroundStyle(.white)
+                                    }
+                                }
+                            }
+                        }
+                        .padding()
+                        .background(Theme.cardBackground)
+                        .clipShape(.rect(cornerRadius: 12))
+                    }
+
+                    // Monthly Breakdown List
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Monthly Breakdown")
+                            .font(.headline)
+                            .foregroundStyle(Theme.textPrimary)
+
+                        ForEach(data, id: \.month) { item in
+                            let monthName = Calendar.current.monthSymbols[item.month - 1]
+                            let hasData = item.assets > 0 || item.liabilities > 0
+
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Text(monthName)
+                                        .font(.subheadline)
+                                        .bold()
+                                        .foregroundStyle(Theme.textPrimary)
+
+                                    Spacer()
+
+                                    if hasData {
+                                        Text(item.netWorth, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
+                                            .font(.subheadline)
+                                            .bold()
+                                            .foregroundStyle(item.netWorth >= 0 ? Theme.positiveAmount : Theme.negativeAmount)
+                                    } else {
+                                        Text("No data")
+                                            .font(.caption)
+                                            .foregroundStyle(Theme.textSecondary)
+                                    }
+                                }
+
+                                if hasData {
+                                    HStack {
+                                        Text("A: \(item.assets, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))")
+                                            .font(.caption)
+                                            .foregroundStyle(Theme.positiveAmount)
+
+                                        Spacer()
+
+                                        Text("L: \(item.liabilities, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))")
+                                            .font(.caption)
+                                            .foregroundStyle(Theme.negativeAmount)
+                                    }
+                                }
+                            }
+                            .padding()
+                            .background(hasData ? Theme.cardBackground : Theme.subtleBackground)
+                            .clipShape(.rect(cornerRadius: 10))
+                        }
+                    }
+                }
+                .padding()
+            }
         }
-        
     }
 }
 
+// MARK: - Previews
 
+#Preview("Year Card") {
+    YearCard(
+        viewModel: NetWorthViewModel(modelContext: try! ModelContainer(
+            for: FinancialItem.self, TrackedYear.self, UserSettings.self,
+            Goal.self, RecurringItem.self, Milestone.self, CustomCategory.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        ).mainContext),
+        year: 2025,
+        data: YearlyData(
+            year: 2025,
+            assets: 250_000,
+            liabilities: 100_000,
+            netWorth: 150_000,
+            assetCategoryTotal: [.cash: 50_000, .investments: 200_000],
+            liabilityCategoryTotal: [.mortgage: 100_000]
+        )
+    )
+    .background(Color.black.ignoresSafeArea())
+}

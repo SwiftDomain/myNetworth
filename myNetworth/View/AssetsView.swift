@@ -6,29 +6,26 @@
 //
 
 import SwiftUI
+import SwiftData
 
 // MARK: - Assets View
+
 struct AssetsView: View {
-    
-    @ObservedObject var viewModel: NetWorthViewModel
-    @State private var showingAddSheet = false
-    
+
+    var viewModel: NetWorthViewModel
+
     let year: Int
-    
-    var yearAssets: [FinancialItem] {
-        viewModel.assets.filter { $0.year == year }
+
+    private var yearAssets: [FinancialItem] {
+        viewModel.filteredItems(viewModel.assets.filter { $0.year == year })
     }
-    
+
     var body: some View {
-        
         ZStack {
-            
-            Background(bgColor1: .bgAsset1, bgColor2: .bgAsset2)
-            
+            Background(bgColor1: Theme.assetGradient1, bgColor2: Theme.assetGradient2)
+
             ScrollView {
-                
                 VStack(spacing: 16) {
-                    
                     if yearAssets.isEmpty {
                         EmptyStateView(
                             icon: "dollarsign.circle",
@@ -41,27 +38,32 @@ struct AssetsView: View {
                             FinancialItemCard(
                                 item: asset,
                                 type: .asset,
+                                currencyCode: viewModel.currencyCode,
                                 onDelete: { viewModel.deleteAsset(asset) }
                             )
                         }
-                        
-                        if !yearAssets.isEmpty {
-                            CategoryChartView(
-                                data: viewModel.getCategoryData(for: .asset, year: year),
-                                title: "Assets by Category",
-                                color: .green
-                            )
-                        }
-                        
-                        
+
+                        CategoryChartView(
+                            data: viewModel.getCategoryData(for: .asset, year: year),
+                            title: "Assets by Category",
+                            color: .green
+                        )
                     }
                 }
                 .padding()
             }
         }
+        .searchable(text: Bindable(viewModel).searchText, prompt: "Search assets")
     }
 }
 
 #Preview {
-    AssetsView(viewModel: NetWorthViewModel(), year: 2025)
+    AssetsView(
+        viewModel: NetWorthViewModel(modelContext: try! ModelContainer(
+            for: FinancialItem.self, TrackedYear.self, UserSettings.self,
+            Goal.self, RecurringItem.self, Milestone.self, CustomCategory.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        ).mainContext),
+        year: 2025
+    )
 }
