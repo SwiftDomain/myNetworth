@@ -316,7 +316,7 @@ struct YearSummaryView: View {
     var body: some View {
         ZStack {
             LinearGradient(
-                colors: [Color(red: 0.05, green: 0.15, blue: 0.35), Color(red: 0.1, green: 0.25, blue: 0.45)],
+                colors: [Theme.summaryGradient1, Theme.summaryGradient2],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )

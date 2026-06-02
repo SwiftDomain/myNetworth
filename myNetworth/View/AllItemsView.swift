@@ -25,7 +25,7 @@ struct AllItemsView: View {
 
     var body: some View {
         ZStack {
-            Background(bgColor1: .blue, bgColor2: .blue.opacity(0.1))
+            Background(bgColor1: Theme.summaryGradient1, bgColor2: Theme.summaryGradient2)
 
             VStack(spacing: 0) {
                 ScrollView {
