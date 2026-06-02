@@ -206,6 +206,13 @@ struct ComparisonChartView: View {
         let isBack: Bool
     }
 
+    // The tracked years, ascending, as category labels for the x-axis. Using a
+    // categorical (String) axis lets the two bars per year share a band without
+    // collapsing to zero width, and bounds the axis to the min…max entered year.
+    private var yearLabels: [String] {
+        data.map(\.year).sorted().map(String.init)
+    }
+
     // For each year, emit the taller bar first so it draws behind the shorter one.
     private var chartData: [BarEntry] {
         data.flatMap { item -> [BarEntry] in
@@ -235,14 +242,15 @@ struct ComparisonChartView: View {
 
             Chart(chartData) { item in
                 BarMark(
-                    x: .value("Year", item.year),
+                    x: .value("Year", String(item.year)),
                     yStart: .value("Amount", 0),
                     yEnd: .value("Amount", item.value),
-                    width: .ratio(item.isBack ? 0.8 : 0.4)
+                    width: .ratio(item.isBack ? 0.9 : 0.5)
                 )
-                .foregroundStyle(by: .value("category", item.category))
+                .foregroundStyle(item.category == "Assets" ? Color.green : Color.red)
             }
             .frame(height: 250)
+            .chartXScale(domain: yearLabels)
             .chartYAxis {
                 AxisMarks(position: .leading) { value in
                     AxisGridLine()
@@ -278,10 +286,6 @@ struct ComparisonChartView: View {
                 }
                 .padding(.vertical, 8)
             }
-            .chartForegroundStyleScale([
-                "Assets": .green,
-                "Liabilities": .red,
-            ])
         }
         .padding()
         .background(Theme.cardBackground)
