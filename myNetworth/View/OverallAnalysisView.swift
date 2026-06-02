@@ -271,7 +271,7 @@ struct ComparisonChartView: View {
                     x: .value("Year", String(item.year)),
                     yStart: .value("Amount", 0),
                     yEnd: .value("Amount", item.value),
-                    width: .ratio(item.isBack ? 0.9 : 0.5)
+                    width: .ratio(item.isBack ? 0.55 : 0.3)
                 )
                 .foregroundStyle(item.category == "Assets" ? Color.green : Color.red)
             }
