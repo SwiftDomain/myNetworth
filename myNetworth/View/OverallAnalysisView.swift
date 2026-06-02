@@ -149,6 +149,12 @@ struct NetWorthChartView: View {
     let data: [YearlyData]
     var currencyCode: String = "USD"
 
+    // Categorical year labels bounding the x-axis to the min…max entered years,
+    // matching the Assets vs Liabilities chart.
+    private var yearLabels: [String] {
+        data.map(\.year).sorted().map(String.init)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Net Worth Over Time")
@@ -157,19 +163,20 @@ struct NetWorthChartView: View {
 
             Chart(data) { item in
                 LineMark(
-                    x: .value("Year", item.year),
+                    x: .value("Year", String(item.year)),
                     y: .value("Net Worth", item.netWorth)
                 )
                 .foregroundStyle(.blue)
                 .lineStyle(StrokeStyle(lineWidth: 3))
 
                 PointMark(
-                    x: .value("Year", item.year),
+                    x: .value("Year", String(item.year)),
                     y: .value("Net Worth", item.netWorth)
                 )
                 .foregroundStyle(.blue)
             }
             .frame(height: 250)
+            .chartXScale(domain: yearLabels)
             .chartXAxis {
                 AxisMarks { _ in
                     AxisGridLine()
