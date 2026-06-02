@@ -57,6 +57,21 @@ class NetWorthViewModel {
         return ((try? modelContext.fetch(descriptor)) ?? []).map(\.year)
     }
 
+    /// Most recent tracked year, if any. `years` is already sorted descending.
+    var mostRecentYear: Int? {
+        years.first
+    }
+
+    // MARK: - Debt Payoff Order
+
+    /// Liabilities for the given year ordered for the debt snowball method
+    /// (smallest balance first, so quick wins come first).
+    func snowballOrder(for year: Int) -> [FinancialItem] {
+        liabilities
+            .filter { $0.year == year }
+            .sorted { $0.amount < $1.amount }
+    }
+
     // MARK: - Settings
 
     var settings: UserSettings {

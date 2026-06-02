@@ -64,6 +64,25 @@ struct OverallAnalysisView: View {
                             .clipShape(.rect(cornerRadius: 12))
                         }
 
+                        // Debt Snowball Section
+                        NavigationLink {
+                            DebtSnowballView(viewModel: viewModel)
+                        } label: {
+                            HStack {
+                                Image(systemName: "list.number")
+                                    .foregroundStyle(.blue)
+                                Text("Debt Snowball Plan")
+                                    .font(.headline)
+                                    .foregroundStyle(Theme.textPrimary)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .foregroundStyle(Theme.textSecondary)
+                            }
+                            .padding()
+                            .background(Theme.cardBackground)
+                            .clipShape(.rect(cornerRadius: 12))
+                        }
+
                         // Year-by-Year Breakdown
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Year-by-Year Breakdown")

@@ -22,6 +22,7 @@
 		3EAA00052F000003001016E5 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00042F000003001016E5 /* SettingsView.swift */; };
 		3EAA00072F000004001016E5 /* GoalsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00062F000004001016E5 /* GoalsView.swift */; };
 		3EAA00092F000005001016E5 /* DebtPayoffView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00082F000005001016E5 /* DebtPayoffView.swift */; };
+		3EAA000A2F000006001016E5 /* DebtSnowballView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA000B2F000006001016E5 /* DebtSnowballView.swift */; };
 		3EBC70B02EFF1031009DF832 /* CategoryBreakdownTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EBC70AF2EFF1031009DF832 /* CategoryBreakdownTile.swift */; };
 /* End PBXBuildFile section */
 
@@ -43,6 +44,7 @@
 		3EAA00042F000003001016E5 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		3EAA00062F000004001016E5 /* GoalsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalsView.swift; sourceTree = "<group>"; };
 		3EAA00082F000005001016E5 /* DebtPayoffView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebtPayoffView.swift; sourceTree = "<group>"; };
+		3EAA000B2F000006001016E5 /* DebtSnowballView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebtSnowballView.swift; sourceTree = "<group>"; };
 		3EBC70AF2EFF1031009DF832 /* CategoryBreakdownTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryBreakdownTile.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -98,6 +100,7 @@
 				3EAA00042F000003001016E5 /* SettingsView.swift */,
 				3EAA00062F000004001016E5 /* GoalsView.swift */,
 				3EAA00082F000005001016E5 /* DebtPayoffView.swift */,
+				3EAA000B2F000006001016E5 /* DebtSnowballView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -208,6 +211,7 @@
 				3EAA00052F000003001016E5 /* SettingsView.swift in Sources */,
 				3EAA00072F000004001016E5 /* GoalsView.swift in Sources */,
 				3EAA00092F000005001016E5 /* DebtPayoffView.swift in Sources */,
+				3EAA000A2F000006001016E5 /* DebtSnowballView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
