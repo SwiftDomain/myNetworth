@@ -13,7 +13,7 @@ struct DebtSnowballView: View {
     var viewModel: NetWorthViewModel
 
     private var debts: [FinancialItem] {
-        guard let year = viewModel.mostRecentYear else { return [] }
+        guard let year = viewModel.currentDebtYear else { return [] }
         return viewModel.snowballOrder(for: year)
     }
 

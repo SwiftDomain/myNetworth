@@ -57,9 +57,12 @@ class NetWorthViewModel {
         return ((try? modelContext.fetch(descriptor)) ?? []).map(\.year)
     }
 
-    /// Most recent tracked year, if any. `years` is already sorted descending.
-    var mostRecentYear: Int? {
-        years.first
+    /// The largest tracked year that is not in the future (≤ the current
+    /// calendar year), used as the "current" snapshot of debts. `years` is
+    /// already sorted descending, so the first match is the largest.
+    var currentDebtYear: Int? {
+        let currentYear = Calendar.current.component(.year, from: .now)
+        return years.first { $0 <= currentYear }
     }
 
     // MARK: - Debt Payoff Order
