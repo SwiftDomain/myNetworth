@@ -202,16 +202,28 @@ struct ComparisonChartView: View {
         let year: Int
         let category: String
         let value: Int
+        /// The taller of the two bars for a year, drawn first (behind) and wider.
+        let isBack: Bool
     }
 
-    // For each year, sort so the larger value comes first (drawn behind).
+    // For each year, emit the taller bar first so it draws behind the shorter one.
     private var chartData: [BarEntry] {
         data.flatMap { item -> [BarEntry] in
             let pair = [
-                BarEntry(id: "\(item.year)-Assets", year: item.year, category: "Assets", value: item.assets),
-                BarEntry(id: "\(item.year)-Liabilities", year: item.year, category: "Liabilities", value: item.liabilities),
+                (category: "Assets", value: item.assets),
+                (category: "Liabilities", value: item.liabilities),
             ]
-            return pair.sorted { $0.value > $1.value }
+            .sorted { $0.value > $1.value }
+
+            return pair.enumerated().map { index, element in
+                BarEntry(
+                    id: "\(item.year)-\(element.category)",
+                    year: item.year,
+                    category: element.category,
+                    value: element.value,
+                    isBack: index == 0
+                )
+            }
         }
     }
 
@@ -224,7 +236,9 @@ struct ComparisonChartView: View {
             Chart(chartData) { item in
                 BarMark(
                     x: .value("Year", item.year),
-                    y: .value("Amount", item.value)
+                    yStart: .value("Amount", 0),
+                    yEnd: .value("Amount", item.value),
+                    width: .ratio(item.isBack ? 0.8 : 0.4)
                 )
                 .foregroundStyle(by: .value("category", item.category))
             }
