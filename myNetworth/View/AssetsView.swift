@@ -46,7 +46,7 @@ struct AssetsView: View {
                         CategoryChartView(
                             data: viewModel.getCategoryData(for: .asset, year: year),
                             title: "Assets by Category",
-                            color: viewModel.assetColor
+                            color: .green
                         )
                     }
                 }

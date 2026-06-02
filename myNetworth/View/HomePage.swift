@@ -25,8 +25,6 @@ struct HomePage: View {
                     BiometricLockView(isUnlocked: $isUnlocked)
                 } else {
                     HomePageContent(viewModel: viewModel)
-                        .environment(\.assetColor, viewModel.assetColor)
-                        .environment(\.liabilityColor, viewModel.liabilityColor)
                 }
             } else {
                 ProgressView()
@@ -490,16 +488,6 @@ struct CategoryChartView: View {
     let title: String
     let color: Color
 
-    /// Graded opacity shades of the single category color, one per sector, so
-    /// the donut reads as one hue while keeping segments distinguishable.
-    private var shades: [Color] {
-        let count = data.count
-        return data.enumerated().map { index, _ in
-            let t = count > 1 ? Double(index) / Double(count - 1) : 0
-            return color.opacity(1.0 - t * 0.6)
-        }
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
@@ -516,7 +504,6 @@ struct CategoryChartView: View {
                     )
                     .foregroundStyle(by: .value("Category", item.0))
                 }
-                .chartForegroundStyleScale(domain: data.map(\.0), range: shades)
                 .scaledToFit()
             }
         }

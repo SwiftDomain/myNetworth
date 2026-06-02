@@ -91,16 +91,6 @@ class NetWorthViewModel {
         settings.currencyCode
     }
 
-    /// User-selected color for all assets (defaults to green).
-    var assetColor: Color {
-        Color(hex: settings.assetColorHex) ?? .green
-    }
-
-    /// User-selected color for all liabilities (defaults to black).
-    var liabilityColor: Color {
-        Color(hex: settings.liabilityColorHex) ?? .black
-    }
-
     func updateCurrency(_ code: String) {
         settings.currencyCode = code
     }
@@ -444,12 +434,7 @@ class NetWorthViewModel {
     @MainActor
     func generatePDFURL(for year: Int) -> URL? {
         let data = getYearData(for: year)
-        let view = PDFReportView(
-            yearData: data,
-            currencyCode: currencyCode,
-            assetColor: assetColor,
-            liabilityColor: liabilityColor
-        )
+        let view = PDFReportView(yearData: data, currencyCode: currencyCode)
         let renderer = ImageRenderer(content: view)
         renderer.scale = 2.0
 

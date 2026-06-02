@@ -117,7 +117,7 @@ struct OverallAnalysisView: View {
                                                 .foregroundStyle(Theme.textSecondary)
                                             Text(data.assets, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
                                                 .font(.subheadline)
-                                                .foregroundStyle(viewModel.assetColor)
+                                                .foregroundStyle(Theme.positiveAmount)
                                         }
 
                                         Spacer()
@@ -128,7 +128,7 @@ struct OverallAnalysisView: View {
                                                 .foregroundStyle(Theme.textSecondary)
                                             Text(data.liabilities, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
                                                 .font(.subheadline)
-                                                .foregroundStyle(viewModel.liabilityColor)
+                                                .foregroundStyle(Theme.negativeAmount)
                                         }
 
                                         Spacer()
@@ -222,8 +222,6 @@ struct NetWorthChartView: View {
 struct ComparisonChartView: View {
     let data: [YearlyData]
     var currencyCode: String = "USD"
-    @Environment(\.assetColor) private var assetColor
-    @Environment(\.liabilityColor) private var liabilityColor
 
     private struct BarEntry: Identifiable {
         let id: String
@@ -275,7 +273,7 @@ struct ComparisonChartView: View {
                     yEnd: .value("Amount", item.value),
                     width: .ratio(item.isBack ? 0.55 : 0.3)
                 )
-                .foregroundStyle(item.category == "Assets" ? assetColor : liabilityColor)
+                .foregroundStyle(item.category == "Assets" ? Color.green : Color.red)
             }
             .frame(height: 250)
             .chartXScale(domain: yearLabels)
@@ -303,7 +301,7 @@ struct ComparisonChartView: View {
                     ForEach(["Assets", "Liabilities"], id: \.self) { category in
                         HStack(spacing: 6) {
                             RoundedRectangle(cornerRadius: 2)
-                                .fill(category == "Assets" ? assetColor : liabilityColor)
+                                .fill(category == "Assets" ? Color.green : Color.red)
                                 .frame(width: 8, height: 8)
 
                             Text(category)

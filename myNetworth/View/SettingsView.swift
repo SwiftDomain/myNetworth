@@ -17,20 +17,6 @@ struct SettingsView: View {
         "BRL", "KRW", "SEK", "NOK", "DKK", "NZD", "SGD", "HKD", "ZAR", "TRY",
     ]
 
-    private var assetColorBinding: Binding<Color> {
-        Binding(
-            get: { Color(hex: viewModel.settings.assetColorHex) ?? .green },
-            set: { viewModel.settings.assetColorHex = $0.toHex() ?? "" }
-        )
-    }
-
-    private var liabilityColorBinding: Binding<Color> {
-        Binding(
-            get: { Color(hex: viewModel.settings.liabilityColorHex) ?? .black },
-            set: { viewModel.settings.liabilityColorHex = $0.toHex() ?? "" }
-        )
-    }
-
     var body: some View {
         NavigationStack {
             Form {
@@ -49,11 +35,6 @@ struct SettingsView: View {
                         Text("Dark").tag("dark")
                         Text("Light").tag("light")
                     }
-                }
-
-                Section("Item Colors") {
-                    ColorPicker("Assets", selection: assetColorBinding, supportsOpacity: false)
-                    ColorPicker("Liabilities", selection: liabilityColorBinding, supportsOpacity: false)
                 }
 
                 Section("Security") {
@@ -111,8 +92,6 @@ struct SettingsView: View {
 struct RecurringItemsListView: View {
     var viewModel: NetWorthViewModel
     @State private var showingAddSheet = false
-    @Environment(\.assetColor) private var assetColor
-    @Environment(\.liabilityColor) private var liabilityColor
 
     var body: some View {
         List {
@@ -124,7 +103,7 @@ struct RecurringItemsListView: View {
                         Spacer()
                         Text(item.amount, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
                             .bold()
-                            .foregroundStyle(item.itemType == "asset" ? assetColor : liabilityColor)
+                            .foregroundStyle(item.itemType == "asset" ? Theme.positiveAmount : Theme.negativeAmount)
                     }
 
                     HStack {
@@ -432,8 +411,6 @@ struct AddMilestoneView: View {
 struct PDFReportView: View {
     let yearData: YearlyData
     var currencyCode: String = "USD"
-    var assetColor: Color = .green
-    var liabilityColor: Color = .black
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -450,7 +427,7 @@ struct PDFReportView: View {
                         .foregroundStyle(.secondary)
                     Text(yearData.assets, format: .currency(code: currencyCode).precision(.fractionLength(0)))
                         .font(.title2)
-                        .foregroundStyle(assetColor)
+                        .foregroundStyle(.green)
                 }
 
                 Spacer()
@@ -461,7 +438,7 @@ struct PDFReportView: View {
                         .foregroundStyle(.secondary)
                     Text(yearData.liabilities, format: .currency(code: currencyCode).precision(.fractionLength(0)))
                         .font(.title2)
-                        .foregroundStyle(liabilityColor)
+                        .foregroundStyle(.red)
                 }
             }
 

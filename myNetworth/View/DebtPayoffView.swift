@@ -41,7 +41,7 @@ struct DebtPayoffView: View {
                         Text(totalDebt, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
                             .font(.title)
                             .bold()
-                            .foregroundStyle(viewModel.liabilityColor)
+                            .foregroundStyle(Theme.negativeAmount)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
@@ -176,7 +176,6 @@ private func calculatePayoff(principal: Double, annualRate: Double, monthlyPayme
 struct PayoffSummaryCard: View {
     let result: PayoffResult
     var currencyCode: String = "USD"
-    @Environment(\.liabilityColor) private var liabilityColor
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -208,7 +207,7 @@ struct PayoffSummaryCard: View {
                     Text(Int(result.totalInterest), format: .currency(code: currencyCode).precision(.fractionLength(0)))
                         .font(.subheadline)
                         .bold()
-                        .foregroundStyle(liabilityColor)
+                        .foregroundStyle(Theme.negativeAmount)
                 }
 
                 Spacer()

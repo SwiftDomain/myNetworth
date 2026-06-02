@@ -68,10 +68,6 @@ class UserSettings {
     /// "system", "dark", or "light"
     var colorScheme: String = "system"
     var requireBiometricLock: Bool = false
-    /// Hex color for all assets; empty falls back to the default green.
-    var assetColorHex: String = ""
-    /// Hex color for all liabilities; empty falls back to the default black.
-    var liabilityColorHex: String = ""
     var createdAt: Date = Date.now
 
     init(currencyCode: String = "USD") {

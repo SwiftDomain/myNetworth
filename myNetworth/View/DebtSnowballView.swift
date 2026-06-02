@@ -69,7 +69,6 @@ struct SnowballSummaryCard: View {
     let totalDebt: Int
     let debtCount: Int
     var currencyCode: String = "USD"
-    @Environment(\.liabilityColor) private var liabilityColor
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -80,7 +79,7 @@ struct SnowballSummaryCard: View {
             Text(totalDebt, format: .currency(code: currencyCode).precision(.fractionLength(0)))
                 .font(.title)
                 .bold()
-                .foregroundStyle(liabilityColor)
+                .foregroundStyle(Theme.negativeAmount)
 
             Text("\(debtCount) debts to pay off")
                 .font(.subheadline)
@@ -120,7 +119,6 @@ struct SnowballRow: View {
     let debt: FinancialItem
     let isNext: Bool
     var currencyCode: String = "USD"
-    @Environment(\.liabilityColor) private var liabilityColor
 
     var body: some View {
         HStack(spacing: 16) {
@@ -147,7 +145,7 @@ struct SnowballRow: View {
                 Text(debt.amount, format: .currency(code: currencyCode).precision(.fractionLength(0)))
                     .font(.subheadline)
                     .bold()
-                    .foregroundStyle(liabilityColor)
+                    .foregroundStyle(Theme.negativeAmount)
 
                 if isNext {
                     Text("Pay first")
