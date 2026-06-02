@@ -197,12 +197,21 @@ struct ComparisonChartView: View {
     let data: [YearlyData]
     var currencyCode: String = "USD"
 
-    private var chartData: [(year: Int, category: String, value: Int)] {
-        data.flatMap { data in
-            [
-                (year: data.year, category: "Assets", value: data.assets),
-                (year: data.year, category: "Liabilities", value: data.liabilities),
+    private struct BarEntry: Identifiable {
+        let id: String
+        let year: Int
+        let category: String
+        let value: Int
+    }
+
+    // For each year, sort so the larger value comes first (drawn behind).
+    private var chartData: [BarEntry] {
+        data.flatMap { item -> [BarEntry] in
+            let pair = [
+                BarEntry(id: "\(item.year)-Assets", year: item.year, category: "Assets", value: item.assets),
+                BarEntry(id: "\(item.year)-Liabilities", year: item.year, category: "Liabilities", value: item.liabilities),
             ]
+            return pair.sorted { $0.value > $1.value }
         }
     }
 
@@ -212,13 +221,12 @@ struct ComparisonChartView: View {
                 .font(.headline)
                 .foregroundStyle(Theme.textPrimary)
 
-            Chart(chartData, id: \.year) { item in
+            Chart(chartData) { item in
                 BarMark(
                     x: .value("Year", item.year),
                     y: .value("Amount", item.value)
                 )
                 .foregroundStyle(by: .value("category", item.category))
-                .position(by: .value("category", item.category))
             }
             .frame(height: 250)
             .chartYAxis {
