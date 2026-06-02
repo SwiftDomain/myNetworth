@@ -36,14 +36,14 @@ struct AllItemsView: View {
                                 title: "Assets",
                                 amount: viewModel.getYearData(for: year).assets,
                                 currencyCode: viewModel.currencyCode,
-                                color: Theme.positiveAmount
+                                color: viewModel.assetColor
                             )
 
                             StatCard(
                                 title: "Liabilities",
                                 amount: viewModel.getYearData(for: year).liabilities,
                                 currencyCode: viewModel.currencyCode,
-                                color: Theme.negativeAmount
+                                color: viewModel.liabilityColor
                             )
                         }
 
@@ -73,7 +73,7 @@ struct AllItemsView: View {
                             ItemSection(
                                 title: "Assets",
                                 icon: "dollarsign.circle.fill",
-                                color: Theme.positiveAmount,
+                                color: viewModel.assetColor,
                                 items: yearAssets,
                                 type: .asset,
                                 currencyCode: viewModel.currencyCode,
@@ -86,7 +86,7 @@ struct AllItemsView: View {
                             ItemSection(
                                 title: "Liabilities",
                                 icon: "creditcard.fill",
-                                color: Theme.negativeAmount,
+                                color: viewModel.liabilityColor,
                                 items: yearLiabilities,
                                 type: .liability,
                                 currencyCode: viewModel.currencyCode,
@@ -185,6 +185,8 @@ struct FinancialItemCard: View {
     let currencyCode: String
     let onDelete: () -> Void
     @State private var showingEditSheet = false
+    @Environment(\.assetColor) private var assetColor
+    @Environment(\.liabilityColor) private var liabilityColor
 
     var body: some View {
         Button {
@@ -215,7 +217,7 @@ struct FinancialItemCard: View {
                     Text(item.amount, format: .currency(code: currencyCode).precision(.fractionLength(0)))
                         .font(.title2)
                         .bold()
-                        .foregroundStyle(type == .asset ? Theme.positiveAmount : Theme.negativeAmount)
+                        .foregroundStyle(type == .asset ? assetColor : liabilityColor)
                 }
 
                 Spacer()

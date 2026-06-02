@@ -14,6 +14,8 @@ struct CategoryBreakdownTile: View {
     let yearData: YearlyData
     let type: ItemType
     var currencyCode: String = "USD"
+    @Environment(\.assetColor) private var assetColor
+    @Environment(\.liabilityColor) private var liabilityColor
 
     private var categories: [(String, Int, Color)] {
         switch type {
@@ -22,14 +24,14 @@ struct CategoryBreakdownTile: View {
                 .filter { $0.value > 0 }
                 .sorted { $0.value > $1.value }
                 .map { key, value in
-                    (key.rawValue, value, key.assetColor)
+                    (key.rawValue, value, assetColor)
                 }
         case .liability:
             return yearData.liabilityCategoryTotal
                 .filter { $0.value > 0 }
                 .sorted { $0.value > $1.value }
                 .map { key, value in
-                    (key.rawValue, value, key.liabilityColor)
+                    (key.rawValue, value, liabilityColor)
                 }
         }
     }

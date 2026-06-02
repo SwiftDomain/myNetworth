@@ -45,7 +45,7 @@ struct LiabilitiesView: View {
                         CategoryChartView(
                             data: viewModel.getCategoryData(for: .liability, year: year),
                             title: "Liabilities by Category",
-                            color: .red
+                            color: viewModel.liabilityColor
                         )
                     }
                 }

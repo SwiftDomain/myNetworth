@@ -25,3 +25,14 @@ enum Theme {
     static let cardBorder = Color.blue.opacity(0.3)
     static let subtleBackground = Color.white.opacity(0.05)
 }
+
+// MARK: - Item Color Environment
+
+/// Environment colors for assets and liabilities, configurable in Settings and
+/// injected at the app root so any view can read them without the view model.
+extension EnvironmentValues {
+    /// Color used for all assets. Defaults to green.
+    @Entry var assetColor: Color = .green
+    /// Color used for all liabilities. Defaults to black.
+    @Entry var liabilityColor: Color = .black
+}
