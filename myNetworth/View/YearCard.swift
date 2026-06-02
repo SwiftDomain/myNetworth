@@ -140,8 +140,15 @@ struct YearDetailView: View {
             }
         }
         .navigationTitle("\(year, format: .number.grouping(.never))")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text("\(year, format: .number.grouping(.never))")
+                    .font(.title3)
+                    .bold()
+                    .foregroundStyle(.blue)
+            }
+
             ToolbarItem(placement: .navigationBarTrailing) {
                 if selectedTab == 1 || selectedTab == 2 {
                     Button("Add Item", systemImage: "plus.circle.fill") {
