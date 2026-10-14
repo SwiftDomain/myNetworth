@@ -418,6 +418,21 @@ class NetWorthViewModel {
         return builtIn + custom
     }
 
+    // MARK: - Insights
+
+    /// Every item as plain values for `InsightsEngine`.
+    var insightItems: [InsightItem] {
+        (assets + liabilities).map { item in
+            InsightItem(
+                name: item.name,
+                category: item.category,
+                isAsset: item.itemType == "asset",
+                amount: item.amount,
+                year: item.year
+            )
+        }
+    }
+
     // MARK: - Export
 
     func generateCSV(for year: Int) -> String {
