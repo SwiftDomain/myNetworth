@@ -129,7 +129,7 @@ struct AddGoalView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Goal Details") {
+                Section {
                     TextField("Title (e.g. 'Reach $500K')", text: $title)
 
                     TextField("Target Amount", value: $targetAmount, format: .number)
@@ -141,6 +141,12 @@ struct AddGoalView: View {
                         Text("Net Worth").tag("netWorth")
                         Text("Total Assets").tag("asset")
                         Text("Total Liabilities").tag("liability")
+                    }
+                } header: {
+                    Text("Goal Details")
+                } footer: {
+                    if goalType == "liability" {
+                        Text("Progress counts down from your debt today to the target amount. Enter 0 to aim for debt-free.")
                     }
                 }
             }
@@ -160,7 +166,8 @@ struct AddGoalView: View {
                         viewModel.addGoal(goal)
                         dismiss()
                     }
-                    .disabled(title.isEmpty || targetAmount == 0)
+                    // A debt goal of 0 means debt-free; other goals need a positive target.
+                    .disabled(title.isEmpty || (targetAmount <= 0 && goalType != "liability"))
                 }
             }
         }
