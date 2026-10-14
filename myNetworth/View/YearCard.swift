@@ -176,6 +176,12 @@ struct AddYearView: View {
     @Binding var newYear: Int
     var onYearAdded: ((Int) -> Void)?
     @Environment(\.dismiss) private var dismiss
+    @State private var startFromPreviousYear = true
+
+    /// The year the new year can start from, if any.
+    private var sourceYear: Int? {
+        viewModel.years.contains(newYear) ? nil : viewModel.carryForwardSource(for: newYear)
+    }
 
     var body: some View {
         NavigationStack {
@@ -205,6 +211,24 @@ struct AddYearView: View {
                                     .foregroundStyle(.orange)
                             }
                         }
+
+                        if let sourceYear {
+                            let itemCount = viewModel.yearlyItems(in: sourceYear).count
+                            Toggle(isOn: $startFromPreviousYear) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Start with \(String(sourceYear))'s items")
+                                        .font(.headline)
+                                        .foregroundStyle(Theme.textPrimary)
+                                    Text("Copies \(itemCount) yearly \(itemCount == 1 ? "item" : "items") and their amounts, so you only update what changed.")
+                                        .font(.caption)
+                                        .foregroundStyle(Theme.textSecondary)
+                                }
+                            }
+                            .tint(.blue)
+                            .padding()
+                            .background(Theme.cardBackground)
+                            .clipShape(.rect(cornerRadius: 12))
+                        }
                     }
                     .padding(.horizontal)
 
@@ -212,7 +236,8 @@ struct AddYearView: View {
 
                     Button {
                         let yearToAdd = newYear
-                        viewModel.addYear(yearToAdd)
+                        let copyFrom = startFromPreviousYear ? sourceYear : nil
+                        viewModel.addYear(yearToAdd, copyingItemsFrom: copyFrom)
                         dismiss()
                         onYearAdded?(yearToAdd)
                     } label: {
