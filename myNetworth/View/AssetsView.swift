@@ -36,9 +36,9 @@ struct AssetsView: View {
                     } else {
                         ForEach(yearAssets) { asset in
                             FinancialItemCard(
+                                viewModel: viewModel,
                                 item: asset,
                                 type: .asset,
-                                currencyCode: viewModel.currencyCode,
                                 onDelete: { viewModel.deleteAsset(asset) }
                             )
                         }

@@ -60,7 +60,7 @@ struct NetWorthProvider: TimelineProvider {
 
         let config = ModelConfiguration(
             schema: schema,
-            groupContainer: .identifier("group.com.beastmode.myNetworth")
+            groupContainer: .identifier("group.com.SwiftDomain.myNetworth")
         )
 
         guard let container = try? ModelContainer(for: schema, configurations: [config]) else {

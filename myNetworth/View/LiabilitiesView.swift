@@ -35,9 +35,9 @@ struct LiabilitiesView: View {
                     } else {
                         ForEach(yearLiabilities) { liability in
                             FinancialItemCard(
+                                viewModel: viewModel,
                                 item: liability,
                                 type: .liability,
-                                currencyCode: viewModel.currencyCode,
                                 onDelete: { viewModel.deleteLiability(liability) }
                             )
                         }

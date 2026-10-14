@@ -15,6 +15,7 @@ import LocalAuthentication
 struct HomePage: View {
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @State private var viewModel: NetWorthViewModel?
     @State private var isUnlocked = false
 
@@ -33,7 +34,16 @@ struct HomePage: View {
         .preferredColorScheme(viewModel?.resolvedColorScheme)
         .task {
             if viewModel == nil {
-                viewModel = NetWorthViewModel(modelContext: modelContext)
+                let newViewModel = NetWorthViewModel(modelContext: modelContext)
+                // Turning the lock on mid-session takes effect the next time the app is backgrounded.
+                isUnlocked = !newViewModel.settings.requireBiometricLock
+                viewModel = newViewModel
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            // Lock again whenever the app leaves the screen, not only at launch.
+            if newPhase == .background, let viewModel {
+                isUnlocked = !viewModel.settings.requireBiometricLock
             }
         }
     }
@@ -43,7 +53,9 @@ struct HomePage: View {
 
 struct BiometricLockView: View {
     @Binding var isUnlocked: Bool
+    @Environment(\.scenePhase) private var scenePhase
     @State private var authError: String?
+    @State private var shouldPromptWhenActive = true
 
     var body: some View {
         ZStack {
@@ -70,35 +82,46 @@ struct BiometricLockView: View {
                 }
 
                 Button("Unlock", systemImage: "lock.open.fill") {
-                    authenticate()
+                    Task { await authenticate() }
                 }
                 .buttonStyle(.borderedProminent)
             }
         }
-        .task {
-            authenticate()
+        .task(id: scenePhase) {
+            // Prompt once each time the app comes back from the background. A prompt
+            // started while backgrounded would just fail, and re-prompting on every
+            // inactive → active change would loop after the user cancels Face ID.
+            switch scenePhase {
+            case .background:
+                shouldPromptWhenActive = true
+            case .active where shouldPromptWhenActive:
+                shouldPromptWhenActive = false
+                await authenticate()
+            default:
+                break
+            }
         }
     }
 
-    private func authenticate() {
+    private func authenticate() async {
         let context = LAContext()
-        var error: NSError?
+        var policyError: NSError?
 
-        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
-            // Biometrics not available, allow access
+        // .deviceOwnerAuthentication uses Face ID / Touch ID and falls back to the
+        // device passcode, so the lock still works when biometrics are unavailable.
+        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &policyError) else {
+            // No passcode is set on this device, so there is nothing to authenticate against.
             isUnlocked = true
             return
         }
 
-        context.evaluatePolicy(
-            .deviceOwnerAuthenticationWithBiometrics,
-            localizedReason: "Unlock your net worth data"
-        ) { success, evaluationError in
-            if success {
-                isUnlocked = true
-            } else {
-                authError = evaluationError?.localizedDescription
-            }
+        do {
+            isUnlocked = try await context.evaluatePolicy(
+                .deviceOwnerAuthentication,
+                localizedReason: "Unlock your net worth data"
+            )
+        } catch {
+            authError = error.localizedDescription
         }
     }
 }
@@ -112,6 +135,8 @@ struct HomePageContent: View {
     @State private var showingSettings = false
     @State private var newYear = Calendar.current.component(.year, from: Date())
     @State private var navigationPath = NavigationPath()
+    @State private var yearPendingDeletion: Int?
+    @State private var showingDeleteYearConfirmation = false
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -171,7 +196,8 @@ struct HomePageContent: View {
                                     }
                                     .contextMenu {
                                         Button(role: .destructive) {
-                                            viewModel.deleteYear(year)
+                                            yearPendingDeletion = year
+                                            showingDeleteYearConfirmation = true
                                         } label: {
                                             Label("Delete Year", systemImage: "trash")
                                         }
@@ -214,14 +240,13 @@ struct HomePageContent: View {
                             }
                         }
 
-                        if !viewModel.goals.isEmpty {
-                            NavigationLink {
-                                GoalsListView(viewModel: viewModel)
-                            } label: {
-                                Image(systemName: "target")
-                                    .font(.title3)
-                                    .foregroundStyle(.blue)
-                            }
+                        // Always shown: GoalsListView is the only place to create a goal.
+                        NavigationLink {
+                            GoalsListView(viewModel: viewModel)
+                        } label: {
+                            Image(systemName: "target")
+                                .font(.title3)
+                                .foregroundStyle(.blue)
                         }
                     }
                 }
@@ -233,6 +258,18 @@ struct HomePageContent: View {
             }
             .sheet(isPresented: $showingSettings) {
                 SettingsView(viewModel: viewModel)
+            }
+            .confirmationDialog(
+                "Delete this year?",
+                isPresented: $showingDeleteYearConfirmation,
+                titleVisibility: .visible,
+                presenting: yearPendingDeletion
+            ) { year in
+                Button("Delete \(String(year))", role: .destructive) {
+                    viewModel.deleteYear(year)
+                }
+            } message: { year in
+                Text("Every asset and liability recorded for \(String(year)) will be permanently deleted.")
             }
         }
     }

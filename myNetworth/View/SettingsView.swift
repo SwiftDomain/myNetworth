@@ -11,11 +11,18 @@ import SwiftData
 struct SettingsView: View {
     var viewModel: NetWorthViewModel
     @Environment(\.dismiss) private var dismiss
+    @State private var exportYear: Int
+    @State private var pdfURL: URL?
 
     private let currencies = [
         "USD", "EUR", "GBP", "JPY", "CAD", "AUD", "CHF", "CNY", "INR", "MXN",
         "BRL", "KRW", "SEK", "NOK", "DKK", "NZD", "SGD", "HKD", "ZAR", "TRY",
     ]
+
+    init(viewModel: NetWorthViewModel) {
+        self.viewModel = viewModel
+        _exportYear = State(initialValue: viewModel.years.first ?? 0)
+    }
 
     var body: some View {
         NavigationStack {
@@ -56,21 +63,27 @@ struct SettingsView: View {
                 }
 
                 Section("Export") {
-                    ForEach(viewModel.years, id: \.self) { year in
-                        let csvData = viewModel.generateCSV(for: year)
-                        ShareLink(
-                            "Export \(year) CSV",
-                            item: csvData,
-                            preview: SharePreview("Net Worth \(year).csv")
-                        )
-                    }
+                    if viewModel.years.isEmpty {
+                        Text("Add a year to export your data.")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Picker("Year", selection: $exportYear) {
+                            ForEach(viewModel.years, id: \.self) { year in
+                                Text(String(year)).tag(year)
+                            }
+                        }
 
-                    ForEach(viewModel.years, id: \.self) { year in
-                        if let pdfURL = viewModel.generatePDFURL(for: year) {
+                        ShareLink(
+                            "Export CSV",
+                            item: viewModel.generateCSV(for: exportYear),
+                            preview: SharePreview("Net Worth \(String(exportYear)).csv")
+                        )
+
+                        if let pdfURL {
                             ShareLink(
-                                "Export \(year) PDF Report",
+                                "Export PDF Report",
                                 item: pdfURL,
-                                preview: SharePreview("Net Worth \(year).pdf")
+                                preview: SharePreview("Net Worth \(String(exportYear)).pdf")
                             )
                         }
                     }
@@ -78,6 +91,13 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
+            .task(id: "\(exportYear)-\(viewModel.currencyCode)") {
+                // Render only the selected year's report, and only when the year or
+                // currency changes, instead of every year's PDF on every redraw.
+                pdfURL = viewModel.years.contains(exportYear)
+                    ? viewModel.generatePDFURL(for: exportYear)
+                    : nil
+            }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }

@@ -247,6 +247,15 @@ class NetWorthViewModel {
         didMutate()
     }
 
+    func updateItem(_ item: FinancialItem, name: String, amount: Int, category: String, month: Int) {
+        item.name = name
+        item.amount = amount
+        item.category = category
+        item.month = month
+        item.updatedAt = .now
+        didMutate()
+    }
+
     // MARK: - Search / Filter
 
     func filteredItems(_ items: [FinancialItem]) -> [FinancialItem] {
@@ -424,7 +433,8 @@ class NetWorthViewModel {
         var csv = "Name,Amount,Category,Type,Month\n"
         let allItems = (assets + liabilities).filter { $0.year == year }
         for item in allItems.sorted(by: { $0.name < $1.name }) {
-            csv += "\(item.name),\(item.amount),\(item.category),\(item.itemType),\(item.month)\n"
+            let fields = [item.name, String(item.amount), item.category, item.itemType, String(item.month)]
+            csv += fields.map(csvField).joined(separator: ",") + "\n"
         }
         return csv
     }
@@ -461,6 +471,17 @@ class NetWorthViewModel {
         default: return nil
         }
     }
+}
+
+// MARK: - CSV Utility
+
+/// Quotes a CSV field that contains a comma, quote or line break, doubling any
+/// embedded quotes (RFC 4180), so names like "Smith, John" stay in one column.
+func csvField(_ value: String) -> String {
+    guard value.contains(where: { $0 == "," || $0 == "\"" || $0.isNewline }) else {
+        return value
+    }
+    return "\"" + value.replacing("\"", with: "\"\"") + "\""
 }
 
 // MARK: - Number Formatting Utility
