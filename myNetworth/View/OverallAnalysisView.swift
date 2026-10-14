@@ -45,33 +45,14 @@ struct OverallAnalysisView: View {
                             currencyCode: viewModel.currencyCode
                         )
 
-                        // Debt Payoff Section
+                        // Debt Payoff Planner
                         NavigationLink {
                             DebtPayoffView(viewModel: viewModel)
                         } label: {
                             HStack {
                                 Image(systemName: "chart.line.downtrend.xyaxis")
                                     .foregroundStyle(.blue)
-                                Text("Debt Payoff Projections")
-                                    .font(.headline)
-                                    .foregroundStyle(Theme.textPrimary)
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .foregroundStyle(Theme.textSecondary)
-                            }
-                            .padding()
-                            .background(Theme.cardBackground)
-                            .clipShape(.rect(cornerRadius: 12))
-                        }
-
-                        // Debt Snowball Section
-                        NavigationLink {
-                            DebtSnowballView(viewModel: viewModel)
-                        } label: {
-                            HStack {
-                                Image(systemName: "list.number")
-                                    .foregroundStyle(.blue)
-                                Text("Debt Snowball Plan")
+                                Text("Debt Payoff Planner")
                                     .font(.headline)
                                     .foregroundStyle(Theme.textPrimary)
                                 Spacer()
@@ -324,7 +305,7 @@ struct ComparisonChartView: View {
         OverallAnalysisView(
             viewModel: NetWorthViewModel(modelContext: try! ModelContainer(
                 for: FinancialItem.self, TrackedYear.self, UserSettings.self,
-                Goal.self, RecurringItem.self, Milestone.self, CustomCategory.self,
+                Goal.self, RecurringItem.self, Milestone.self, CustomCategory.self, DebtTerms.self,
                 configurations: ModelConfiguration(isStoredInMemoryOnly: true)
             ).mainContext)
         )

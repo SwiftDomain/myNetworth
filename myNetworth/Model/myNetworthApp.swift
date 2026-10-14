@@ -22,6 +22,7 @@ struct myNetworthApp: App {
             RecurringItem.self,
             Milestone.self,
             CustomCategory.self,
+            DebtTerms.self,
         ])
 
         let appGroupID = "group.com.SwiftDomain.myNetworth"
