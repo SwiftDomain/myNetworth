@@ -27,6 +27,7 @@ class NetWorthViewModel {
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
         MigrationManager.migrateIfNeeded(modelContext: modelContext)
+        backfillDebtGoalStarts()
     }
 
     // MARK: - Fetched Data
@@ -313,6 +314,9 @@ class NetWorthViewModel {
     }
 
     func addGoal(_ goal: Goal) {
+        if goal.goalType == "liability" {
+            goal.startAmount = debtWhenSet(goal)
+        }
         modelContext.insert(goal)
         didMutate()
     }
@@ -322,18 +326,60 @@ class NetWorthViewModel {
         didMutate()
     }
 
+    /// Tracked years that have at least one item, newest first.
+    private var yearsWithData: [Int] {
+        let yearsWithItems = Set((assets + liabilities).map(\.year))
+        return years.filter { yearsWithItems.contains($0) }
+    }
+
+    /// The most recent year, not in the future, that has items. Goal progress is measured
+    /// against it, since the calendar year may not have been filled in yet.
+    var latestYearWithData: Int? {
+        let thisYear = Calendar.current.component(.year, from: .now)
+        return yearsWithData.first { $0 <= thisYear }
+    }
+
+    /// How far along a goal is, from 0 (not started) to 1 (reached).
     func goalProgress(for goal: Goal) -> Double {
-        let currentYear = Calendar.current.component(.year, from: .now)
-        let yearData = getYearData(for: currentYear)
-        let currentAmount: Int
+        guard let year = latestYearWithData else { return 0 }
+        let current = getYearData(for: year)
+
+        let progress: Double
         switch goal.goalType {
-        case "netWorth": currentAmount = yearData.netWorth
-        case "asset": currentAmount = yearData.assets
-        case "liability": currentAmount = yearData.liabilities
-        default: currentAmount = yearData.netWorth
+        case "liability":
+            // Debt goals count down: progress is the share of the debt paid off since the
+            // goal was set, so owing more than the target no longer reads as "complete".
+            let start = goal.startAmount ?? current.liabilities
+            let toPayOff = start - goal.targetAmount
+            guard toPayOff > 0 else { return current.liabilities <= goal.targetAmount ? 1 : 0 }
+            progress = Double(start - current.liabilities) / Double(toPayOff)
+        case "asset":
+            guard goal.targetAmount > 0 else { return 0 }
+            progress = Double(current.assets) / Double(goal.targetAmount)
+        default:
+            guard goal.targetAmount > 0 else { return 0 }
+            progress = Double(current.netWorth) / Double(goal.targetAmount)
         }
-        guard goal.targetAmount != 0 else { return 0 }
-        return Double(currentAmount) / Double(goal.targetAmount)
+        return min(max(progress, 0), 1)
+    }
+
+    /// Total liabilities in the latest year with data on or before the year the goal was
+    /// created (or the earliest year with data if there's none): the debt a goal starts from.
+    private func debtWhenSet(_ goal: Goal) -> Int? {
+        let createdYear = Calendar.current.component(.year, from: goal.createdAt)
+        let candidates = yearsWithData
+        guard let year = candidates.first(where: { $0 <= createdYear }) ?? candidates.last else {
+            return nil
+        }
+        return getYearData(for: year).liabilities
+    }
+
+    /// Debt goals made before `startAmount` existed get it filled in once from the data, so
+    /// their starting point stays fixed when that year's numbers are edited later.
+    private func backfillDebtGoalStarts() {
+        for goal in goals where goal.goalType == "liability" && goal.startAmount == nil {
+            goal.startAmount = debtWhenSet(goal)
+        }
     }
 
     // MARK: - Milestones
