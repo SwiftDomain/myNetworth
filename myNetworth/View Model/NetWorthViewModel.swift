@@ -300,68 +300,6 @@ class NetWorthViewModel {
         return Double(currentAmount) / Double(goal.targetAmount)
     }
 
-    // MARK: - Recurring Items
-
-    var recurringItems: [RecurringItem] {
-        _ = refreshToken
-        let descriptor = FetchDescriptor<RecurringItem>(
-            sortBy: [SortDescriptor(\.name)]
-        )
-        return (try? modelContext.fetch(descriptor)) ?? []
-    }
-
-    func addRecurringItem(_ item: RecurringItem) {
-        modelContext.insert(item)
-        didMutate()
-    }
-
-    func deleteRecurringItem(_ item: RecurringItem) {
-        modelContext.delete(item)
-        didMutate()
-    }
-
-    func generateRecurringItems(for year: Int, month: Int) {
-        let activeItems = recurringItems.filter(\.isActive)
-
-        for recurring in activeItems {
-            // Check if already generated
-            let existing = assets.filter {
-                $0.name == recurring.name
-                    && $0.year == year
-                    && $0.month == month
-                    && $0.category == recurring.category
-            } + liabilities.filter {
-                $0.name == recurring.name
-                    && $0.year == year
-                    && $0.month == month
-                    && $0.category == recurring.category
-            }
-            guard existing.isEmpty else { continue }
-
-            let shouldGenerate: Bool
-            switch recurring.frequency {
-            case "monthly": shouldGenerate = true
-            case "quarterly": shouldGenerate = [1, 4, 7, 10].contains(month)
-            case "annually": shouldGenerate = month == 1
-            default: shouldGenerate = false
-            }
-
-            if shouldGenerate {
-                let item = FinancialItem(
-                    name: recurring.name,
-                    amount: recurring.amount,
-                    year: year,
-                    month: month,
-                    category: recurring.category,
-                    itemType: recurring.itemType,
-                    isRecurring: true
-                )
-                modelContext.insert(item)
-            }
-        }
-        didMutate()
-    }
-
     // MARK: - Milestones
 
     var milestones: [Milestone] {
