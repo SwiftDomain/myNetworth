@@ -190,9 +190,35 @@ class NetWorthViewModel {
 
     // MARK: - CRUD: Years
 
-    func addYear(_ year: Int) {
+    /// Items recorded for the whole year rather than for a specific month.
+    func yearlyItems(in year: Int) -> [FinancialItem] {
+        (assets + liabilities).filter { $0.year == year && $0.month == 0 }
+    }
+
+    /// The closest earlier year that has yearly items, which a new year can start from.
+    func carryForwardSource(for year: Int) -> Int? {
+        let yearsWithYearlyItems = Set((assets + liabilities).filter { $0.month == 0 }.map(\.year))
+        // `years` is sorted newest first, so the first match is the closest earlier year.
+        return years.first { $0 < year && yearsWithYearlyItems.contains($0) }
+    }
+
+    /// Adds a year, optionally starting it with a copy of another year's yearly items
+    /// (amounts included) so they don't have to be typed in again.
+    func addYear(_ year: Int, copyingItemsFrom sourceYear: Int? = nil) {
         guard !years.contains(year) else { return }
         modelContext.insert(TrackedYear(year: year))
+        if let sourceYear {
+            for item in yearlyItems(in: sourceYear) {
+                let copy = FinancialItem(
+                    name: item.name,
+                    amount: item.amount,
+                    year: year,
+                    category: item.category,
+                    itemType: item.itemType
+                )
+                modelContext.insert(copy)
+            }
+        }
         didMutate()
     }
 
@@ -219,6 +245,16 @@ class NetWorthViewModel {
 
     func addItem(_ item: FinancialItem) {
         modelContext.insert(item)
+        didMutate()
+    }
+
+    /// Saves the amounts confirmed in Update Balances in one go.
+    func updateAmounts(_ newAmounts: [UUID: Int], of items: [FinancialItem]) {
+        for item in items {
+            guard let amount = newAmounts[item.id], amount != item.amount else { continue }
+            item.amount = amount
+            item.updatedAt = .now
+        }
         didMutate()
     }
 
