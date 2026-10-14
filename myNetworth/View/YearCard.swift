@@ -413,6 +413,9 @@ struct YearSummaryView: View {
                     .background(Theme.subtleBackground)
                     .clipShape(.rect(cornerRadius: 16))
 
+                    // What Changed (shown when an earlier year has data)
+                    WhatChangedCard(viewModel: viewModel, year: year)
+
                     // Assets Breakdown
                     CategoryBreakdownTile(
                         yearData: yearData,

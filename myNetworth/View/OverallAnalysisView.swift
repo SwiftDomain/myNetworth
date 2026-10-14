@@ -33,6 +33,9 @@ struct OverallAnalysisView: View {
                         )
                         .padding(.top, 100)
                     } else {
+                        // Insights (shown when at least two years have data)
+                        OverallInsightsCard(viewModel: viewModel)
+
                         // Net Worth Trend Chart
                         NetWorthChartView(
                             data: viewModel.yearlyData,
