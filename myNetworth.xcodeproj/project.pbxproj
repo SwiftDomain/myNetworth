@@ -23,6 +23,7 @@
 		3EAA00072F000004001016E5 /* GoalsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00062F000004001016E5 /* GoalsView.swift */; };
 		3EAA00092F000005001016E5 /* DebtPayoffView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00082F000005001016E5 /* DebtPayoffView.swift */; };
 		3EAA000A2F000006001016E5 /* DebtSnowballView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA000B2F000006001016E5 /* DebtSnowballView.swift */; };
+		3EAA000D2F000007001016E5 /* SharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA000C2F000007001016E5 /* SharedStore.swift */; };
 		3EBC70B02EFF1031009DF832 /* CategoryBreakdownTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EBC70AF2EFF1031009DF832 /* CategoryBreakdownTile.swift */; };
 /* End PBXBuildFile section */
 
@@ -45,6 +46,7 @@
 		3EAA00062F000004001016E5 /* GoalsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalsView.swift; sourceTree = "<group>"; };
 		3EAA00082F000005001016E5 /* DebtPayoffView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebtPayoffView.swift; sourceTree = "<group>"; };
 		3EAA000B2F000006001016E5 /* DebtSnowballView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebtSnowballView.swift; sourceTree = "<group>"; };
+		3EAA000C2F000007001016E5 /* SharedStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedStore.swift; sourceTree = "<group>"; };
 		3EBC70AF2EFF1031009DF832 /* CategoryBreakdownTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryBreakdownTile.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -112,6 +114,7 @@
 				3E3EDAAB2EE39D96001016E5 /* myNetworthApp.swift */,
 				3EAA00002F000001001016E5 /* Theme.swift */,
 				3EAA00022F000002001016E5 /* MigrationManager.swift */,
+				3EAA000C2F000007001016E5 /* SharedStore.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -212,6 +215,7 @@
 				3EAA00072F000004001016E5 /* GoalsView.swift in Sources */,
 				3EAA00092F000005001016E5 /* DebtPayoffView.swift in Sources */,
 				3EAA000A2F000006001016E5 /* DebtSnowballView.swift in Sources */,
+				3EAA000D2F000007001016E5 /* SharedStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
