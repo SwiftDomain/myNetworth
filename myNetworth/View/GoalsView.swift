@@ -53,6 +53,7 @@ struct GoalsListView: View {
 struct GoalCard: View {
     var viewModel: NetWorthViewModel
     let goal: Goal
+    @State private var showingDeleteConfirmation = false
 
     private var progress: Double {
         viewModel.goalProgress(for: goal)
@@ -80,7 +81,7 @@ struct GoalCard: View {
                 }
 
                 Button("Delete", systemImage: "trash", role: .destructive) {
-                    viewModel.deleteGoal(goal)
+                    showingDeleteConfirmation = true
                 }
                 .labelStyle(.iconOnly)
                 .foregroundStyle(.red.opacity(0.8))
@@ -112,6 +113,17 @@ struct GoalCard: View {
         .padding()
         .background(Theme.cardBackground)
         .clipShape(.rect(cornerRadius: 12))
+        .confirmationDialog(
+            "Delete \(goal.title)?",
+            isPresented: $showingDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete Goal", role: .destructive) {
+                viewModel.deleteGoal(goal)
+            }
+        } message: {
+            Text("This can't be undone.")
+        }
     }
 }
 

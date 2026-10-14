@@ -247,6 +247,15 @@ class NetWorthViewModel {
         didMutate()
     }
 
+    func updateItem(_ item: FinancialItem, name: String, amount: Int, category: String, month: Int) {
+        item.name = name
+        item.amount = amount
+        item.category = category
+        item.month = month
+        item.updatedAt = .now
+        didMutate()
+    }
+
     // MARK: - Search / Filter
 
     func filteredItems(_ items: [FinancialItem]) -> [FinancialItem] {
@@ -289,68 +298,6 @@ class NetWorthViewModel {
         }
         guard goal.targetAmount != 0 else { return 0 }
         return Double(currentAmount) / Double(goal.targetAmount)
-    }
-
-    // MARK: - Recurring Items
-
-    var recurringItems: [RecurringItem] {
-        _ = refreshToken
-        let descriptor = FetchDescriptor<RecurringItem>(
-            sortBy: [SortDescriptor(\.name)]
-        )
-        return (try? modelContext.fetch(descriptor)) ?? []
-    }
-
-    func addRecurringItem(_ item: RecurringItem) {
-        modelContext.insert(item)
-        didMutate()
-    }
-
-    func deleteRecurringItem(_ item: RecurringItem) {
-        modelContext.delete(item)
-        didMutate()
-    }
-
-    func generateRecurringItems(for year: Int, month: Int) {
-        let activeItems = recurringItems.filter(\.isActive)
-
-        for recurring in activeItems {
-            // Check if already generated
-            let existing = assets.filter {
-                $0.name == recurring.name
-                    && $0.year == year
-                    && $0.month == month
-                    && $0.category == recurring.category
-            } + liabilities.filter {
-                $0.name == recurring.name
-                    && $0.year == year
-                    && $0.month == month
-                    && $0.category == recurring.category
-            }
-            guard existing.isEmpty else { continue }
-
-            let shouldGenerate: Bool
-            switch recurring.frequency {
-            case "monthly": shouldGenerate = true
-            case "quarterly": shouldGenerate = [1, 4, 7, 10].contains(month)
-            case "annually": shouldGenerate = month == 1
-            default: shouldGenerate = false
-            }
-
-            if shouldGenerate {
-                let item = FinancialItem(
-                    name: recurring.name,
-                    amount: recurring.amount,
-                    year: year,
-                    month: month,
-                    category: recurring.category,
-                    itemType: recurring.itemType,
-                    isRecurring: true
-                )
-                modelContext.insert(item)
-            }
-        }
-        didMutate()
     }
 
     // MARK: - Milestones
@@ -424,7 +371,8 @@ class NetWorthViewModel {
         var csv = "Name,Amount,Category,Type,Month\n"
         let allItems = (assets + liabilities).filter { $0.year == year }
         for item in allItems.sorted(by: { $0.name < $1.name }) {
-            csv += "\(item.name),\(item.amount),\(item.category),\(item.itemType),\(item.month)\n"
+            let fields = [item.name, String(item.amount), item.category, item.itemType, String(item.month)]
+            csv += fields.map(csvField).joined(separator: ",") + "\n"
         }
         return csv
     }
@@ -461,6 +409,17 @@ class NetWorthViewModel {
         default: return nil
         }
     }
+}
+
+// MARK: - CSV Utility
+
+/// Quotes a CSV field that contains a comma, quote or line break, doubling any
+/// embedded quotes (RFC 4180), so names like "Smith, John" stay in one column.
+func csvField(_ value: String) -> String {
+    guard value.contains(where: { $0 == "," || $0 == "\"" || $0.isNewline }) else {
+        return value
+    }
+    return "\"" + value.replacing("\"", with: "\"\"") + "\""
 }
 
 // MARK: - Number Formatting Utility

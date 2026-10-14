@@ -105,6 +105,8 @@ class Goal {
 
 // MARK: - Recurring Item Model
 
+/// No longer used by the app: the Recurring Items screen was removed. The model stays in
+/// the schema so existing stores keep opening without a SwiftData migration.
 @Model
 class RecurringItem {
     var id: UUID = UUID()
