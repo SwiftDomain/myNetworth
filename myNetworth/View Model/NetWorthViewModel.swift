@@ -248,6 +248,16 @@ class NetWorthViewModel {
         didMutate()
     }
 
+    /// Saves the amounts confirmed in Update Balances in one go.
+    func updateAmounts(_ newAmounts: [UUID: Int], of items: [FinancialItem]) {
+        for item in items {
+            guard let amount = newAmounts[item.id], amount != item.amount else { continue }
+            item.amount = amount
+            item.updatedAt = .now
+        }
+        didMutate()
+    }
+
     func addAsset(_ item: FinancialItem) {
         modelContext.insert(item)
         didMutate()

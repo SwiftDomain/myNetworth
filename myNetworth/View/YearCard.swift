@@ -333,6 +333,7 @@ struct YearSummaryView: View {
 
     var viewModel: NetWorthViewModel
     let year: Int
+    @State private var showingUpdateBalances = false
 
     private var yearData: YearlyData {
         viewModel.getYearData(for: year)
@@ -349,6 +350,37 @@ struct YearSummaryView: View {
 
             ScrollView {
                 VStack(spacing: 20) {
+                    // Update Balances
+                    if !viewModel.yearlyItems(in: year).isEmpty {
+                        Button {
+                            showingUpdateBalances = true
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .font(.title2)
+                                    .foregroundStyle(.blue)
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Update Balances")
+                                        .font(.headline)
+                                        .foregroundStyle(Theme.textPrimary)
+                                    Text("Go through each item and keep or change its amount")
+                                        .font(.caption)
+                                        .foregroundStyle(Theme.textSecondary)
+                                }
+
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .foregroundStyle(Theme.textSecondary)
+                            }
+                            .padding()
+                            .background(Theme.cardBackground)
+                            .clipShape(.rect(cornerRadius: 16))
+                        }
+                        .buttonStyle(.plain)
+                    }
+
                     // Summary Cards
                     VStack(spacing: 20) {
                         SummaryCard(
@@ -441,6 +473,9 @@ struct YearSummaryView: View {
                 }
                 .padding()
             }
+        }
+        .sheet(isPresented: $showingUpdateBalances) {
+            UpdateBalancesView(viewModel: viewModel, year: year)
         }
     }
 }

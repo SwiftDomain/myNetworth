@@ -13,6 +13,7 @@
 		3E3EDAB32EE39E1D001016E5 /* FinancialItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E3EDAB22EE39E1D001016E5 /* FinancialItem.swift */; };
 		3E3EDAB62EE39E64001016E5 /* NetWorthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E3EDAB52EE39E64001016E5 /* NetWorthViewModel.swift */; };
 		3E3EDAB82EE39EAB001016E5 /* YearCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E3EDAB72EE39EAB001016E5 /* YearCard.swift */; };
+		3EAA000F2F000008001016E5 /* UpdateBalancesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA000E2F000008001016E5 /* UpdateBalancesView.swift */; };
 		3E3EDAC02EE39F47001016E5 /* AllItemsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E3EDABF2EE39F47001016E5 /* AllItemsView.swift */; };
 		3E3EDAC22EE39F6A001016E5 /* AssetsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E3EDAC12EE39F6A001016E5 /* AssetsView.swift */; };
 		3E3EDAC42EE39F87001016E5 /* LiabilitiesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E3EDAC32EE39F87001016E5 /* LiabilitiesView.swift */; };
@@ -34,6 +35,7 @@
 		3E3EDAB22EE39E1D001016E5 /* FinancialItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinancialItem.swift; sourceTree = "<group>"; };
 		3E3EDAB52EE39E64001016E5 /* NetWorthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetWorthViewModel.swift; sourceTree = "<group>"; };
 		3E3EDAB72EE39EAB001016E5 /* YearCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YearCard.swift; sourceTree = "<group>"; };
+		3EAA000E2F000008001016E5 /* UpdateBalancesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateBalancesView.swift; sourceTree = "<group>"; };
 		3E3EDABF2EE39F47001016E5 /* AllItemsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllItemsView.swift; sourceTree = "<group>"; };
 		3E3EDAC12EE39F6A001016E5 /* AssetsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetsView.swift; sourceTree = "<group>"; };
 		3E3EDAC32EE39F87001016E5 /* LiabilitiesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiabilitiesView.swift; sourceTree = "<group>"; };
@@ -97,6 +99,7 @@
 				3E3EDAC12EE39F6A001016E5 /* AssetsView.swift */,
 				3E3EDABF2EE39F47001016E5 /* AllItemsView.swift */,
 				3E3EDAB72EE39EAB001016E5 /* YearCard.swift */,
+				3EAA000E2F000008001016E5 /* UpdateBalancesView.swift */,
 				3EAA00042F000003001016E5 /* SettingsView.swift */,
 				3EAA00062F000004001016E5 /* GoalsView.swift */,
 				3EAA00082F000005001016E5 /* DebtPayoffView.swift */,
@@ -205,6 +208,7 @@
 				3E3EDAC22EE39F6A001016E5 /* AssetsView.swift in Sources */,
 				3E3EDAC82EE39FEC001016E5 /* OverallAnalysisView.swift in Sources */,
 				3E3EDAB82EE39EAB001016E5 /* YearCard.swift in Sources */,
+				3EAA000F2F000008001016E5 /* UpdateBalancesView.swift in Sources */,
 				3E3EDAAF2EE39D96001016E5 /* myNetworthApp.swift in Sources */,
 				3EAA00012F000001001016E5 /* Theme.swift in Sources */,
 				3EAA00032F000002001016E5 /* MigrationManager.swift in Sources */,
