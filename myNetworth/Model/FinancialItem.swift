@@ -88,6 +88,9 @@ class Goal {
     var isAchieved: Bool = false
     var achievedDate: Date? = nil
     var createdAt: Date = Date.now
+    /// Debt goals only: total liabilities when the goal was set, which progress counts down
+    /// from. `nil` until known; goals created before this existed get it filled in at launch.
+    var startAmount: Int? = nil
 
     init(
         title: String,
@@ -105,6 +108,8 @@ class Goal {
 
 // MARK: - Recurring Item Model
 
+/// No longer used by the app: the Recurring Items screen was removed. The model stays in
+/// the schema so existing stores keep opening without a SwiftData migration.
 @Model
 class RecurringItem {
     var id: UUID = UUID()

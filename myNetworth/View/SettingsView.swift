@@ -11,11 +11,18 @@ import SwiftData
 struct SettingsView: View {
     var viewModel: NetWorthViewModel
     @Environment(\.dismiss) private var dismiss
+    @State private var exportYear: Int
+    @State private var pdfURL: URL?
 
     private let currencies = [
         "USD", "EUR", "GBP", "JPY", "CAD", "AUD", "CHF", "CNY", "INR", "MXN",
         "BRL", "KRW", "SEK", "NOK", "DKK", "NZD", "SGD", "HKD", "ZAR", "TRY",
     ]
+
+    init(viewModel: NetWorthViewModel) {
+        self.viewModel = viewModel
+        _exportYear = State(initialValue: viewModel.years.first ?? 0)
+    }
 
     var body: some View {
         NavigationStack {
@@ -42,10 +49,6 @@ struct SettingsView: View {
                 }
 
                 Section("Data Management") {
-                    NavigationLink("Recurring Items") {
-                        RecurringItemsListView(viewModel: viewModel)
-                    }
-
                     NavigationLink("Custom Categories") {
                         ManageCategoriesView(viewModel: viewModel)
                     }
@@ -56,21 +59,27 @@ struct SettingsView: View {
                 }
 
                 Section("Export") {
-                    ForEach(viewModel.years, id: \.self) { year in
-                        let csvData = viewModel.generateCSV(for: year)
-                        ShareLink(
-                            "Export \(year) CSV",
-                            item: csvData,
-                            preview: SharePreview("Net Worth \(year).csv")
-                        )
-                    }
+                    if viewModel.years.isEmpty {
+                        Text("Add a year to export your data.")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Picker("Year", selection: $exportYear) {
+                            ForEach(viewModel.years, id: \.self) { year in
+                                Text(String(year)).tag(year)
+                            }
+                        }
 
-                    ForEach(viewModel.years, id: \.self) { year in
-                        if let pdfURL = viewModel.generatePDFURL(for: year) {
+                        ShareLink(
+                            "Export CSV",
+                            item: viewModel.generateCSV(for: exportYear),
+                            preview: SharePreview("Net Worth \(String(exportYear)).csv")
+                        )
+
+                        if let pdfURL {
                             ShareLink(
-                                "Export \(year) PDF Report",
+                                "Export PDF Report",
                                 item: pdfURL,
-                                preview: SharePreview("Net Worth \(year).pdf")
+                                preview: SharePreview("Net Worth \(String(exportYear)).pdf")
                             )
                         }
                     }
@@ -78,138 +87,16 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
+            .task(id: "\(exportYear)-\(viewModel.currencyCode)") {
+                // Render only the selected year's report, and only when the year or
+                // currency changes, instead of every year's PDF on every redraw.
+                pdfURL = viewModel.years.contains(exportYear)
+                    ? viewModel.generatePDFURL(for: exportYear)
+                    : nil
+            }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
-                }
-            }
-        }
-    }
-}
-
-// MARK: - Recurring Items List
-
-struct RecurringItemsListView: View {
-    var viewModel: NetWorthViewModel
-    @State private var showingAddSheet = false
-
-    var body: some View {
-        List {
-            ForEach(viewModel.recurringItems) { item in
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text(item.name)
-                            .font(.headline)
-                        Spacer()
-                        Text(item.amount, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
-                            .bold()
-                            .foregroundStyle(item.itemType == "asset" ? Theme.positiveAmount : Theme.negativeAmount)
-                    }
-
-                    HStack {
-                        Text(item.category)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text("•")
-                            .foregroundStyle(.secondary)
-                        Text(item.frequency.capitalized)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text("•")
-                            .foregroundStyle(.secondary)
-                        Text(item.itemType.capitalized)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-            .onDelete { indexSet in
-                for index in indexSet {
-                    viewModel.deleteRecurringItem(viewModel.recurringItems[index])
-                }
-            }
-        }
-        .navigationTitle("Recurring Items")
-        .toolbar {
-            Button("Add", systemImage: "plus") {
-                showingAddSheet = true
-            }
-        }
-        .sheet(isPresented: $showingAddSheet) {
-            AddRecurringItemView(viewModel: viewModel)
-        }
-        .overlay {
-            if viewModel.recurringItems.isEmpty {
-                ContentUnavailableView(
-                    "No Recurring Items",
-                    systemImage: "arrow.triangle.2.circlepath",
-                    description: Text("Add recurring items to auto-populate monthly entries")
-                )
-            }
-        }
-    }
-}
-
-// MARK: - Add Recurring Item
-
-struct AddRecurringItemView: View {
-    var viewModel: NetWorthViewModel
-    @Environment(\.dismiss) private var dismiss
-
-    @State private var name = ""
-    @State private var amount = 0
-    @State private var category = ""
-    @State private var itemType: ItemType = .asset
-    @State private var frequency = "monthly"
-
-    private var categories: [String] {
-        viewModel.allCategoryNames(for: itemType)
-    }
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                TextField("Name", text: $name)
-
-                TextField("Amount", value: $amount, format: .number)
-                    .keyboardType(.numberPad)
-
-                Picker("Type", selection: $itemType) {
-                    Text("Asset").tag(ItemType.asset)
-                    Text("Liability").tag(ItemType.liability)
-                }
-
-                Picker("Category", selection: $category) {
-                    Text("Select").tag("")
-                    ForEach(categories, id: \.self) { cat in
-                        Text(cat).tag(cat)
-                    }
-                }
-
-                Picker("Frequency", selection: $frequency) {
-                    Text("Monthly").tag("monthly")
-                    Text("Quarterly").tag("quarterly")
-                    Text("Annually").tag("annually")
-                }
-            }
-            .navigationTitle("Add Recurring Item")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        let item = RecurringItem(
-                            name: name,
-                            amount: amount,
-                            category: category,
-                            itemType: itemType.rawValue,
-                            frequency: frequency
-                        )
-                        viewModel.addRecurringItem(item)
-                        dismiss()
-                    }
-                    .disabled(name.isEmpty || amount == 0 || category.isEmpty)
                 }
             }
         }

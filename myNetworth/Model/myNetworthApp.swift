@@ -14,27 +14,18 @@ struct myNetworthApp: App {
     private let modelContainer: ModelContainer
 
     init() {
-        let schema = Schema([
-            FinancialItem.self,
-            TrackedYear.self,
-            UserSettings.self,
-            Goal.self,
-            RecurringItem.self,
-            Milestone.self,
-            CustomCategory.self,
-            DebtTerms.self,
-        ])
-
-        let appGroupID = "group.com.SwiftDomain.myNetworth"
-        let hasAppGroup = FileManager.default.containerURL(
-            forSecurityApplicationGroupIdentifier: appGroupID
-        ) != nil
+        let schema = SharedStore.schema
 
         let configuration: ModelConfiguration
-        if hasAppGroup {
+        if let groupStoreURL = SharedStore.groupStoreURL {
+            // Shared with the widget. Existing data is copied in the first time; if that
+            // copy fails, keep using the data where it is and retry on the next launch.
+            let storeURL = SharedStore.copyLegacyStoreIfNeeded(to: groupStoreURL)
+                ? groupStoreURL
+                : SharedStore.legacyStoreURL
             configuration = ModelConfiguration(
                 schema: schema,
-                groupContainer: .identifier(appGroupID),
+                url: storeURL,
                 cloudKitDatabase: .automatic
             )
         } else {

@@ -27,6 +27,7 @@ class NetWorthViewModel {
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
         MigrationManager.migrateIfNeeded(modelContext: modelContext)
+        backfillDebtGoalStarts()
     }
 
     // MARK: - Fetched Data
@@ -254,9 +255,35 @@ class NetWorthViewModel {
 
     // MARK: - CRUD: Years
 
-    func addYear(_ year: Int) {
+    /// Items recorded for the whole year rather than for a specific month.
+    func yearlyItems(in year: Int) -> [FinancialItem] {
+        (assets + liabilities).filter { $0.year == year && $0.month == 0 }
+    }
+
+    /// The closest earlier year that has yearly items, which a new year can start from.
+    func carryForwardSource(for year: Int) -> Int? {
+        let yearsWithYearlyItems = Set((assets + liabilities).filter { $0.month == 0 }.map(\.year))
+        // `years` is sorted newest first, so the first match is the closest earlier year.
+        return years.first { $0 < year && yearsWithYearlyItems.contains($0) }
+    }
+
+    /// Adds a year, optionally starting it with a copy of another year's yearly items
+    /// (amounts included) so they don't have to be typed in again.
+    func addYear(_ year: Int, copyingItemsFrom sourceYear: Int? = nil) {
         guard !years.contains(year) else { return }
         modelContext.insert(TrackedYear(year: year))
+        if let sourceYear {
+            for item in yearlyItems(in: sourceYear) {
+                let copy = FinancialItem(
+                    name: item.name,
+                    amount: item.amount,
+                    year: year,
+                    category: item.category,
+                    itemType: item.itemType
+                )
+                modelContext.insert(copy)
+            }
+        }
         didMutate()
     }
 
@@ -286,6 +313,16 @@ class NetWorthViewModel {
         didMutate()
     }
 
+    /// Saves the amounts confirmed in Update Balances in one go.
+    func updateAmounts(_ newAmounts: [UUID: Int], of items: [FinancialItem]) {
+        for item in items {
+            guard let amount = newAmounts[item.id], amount != item.amount else { continue }
+            item.amount = amount
+            item.updatedAt = .now
+        }
+        didMutate()
+    }
+
     func addAsset(_ item: FinancialItem) {
         modelContext.insert(item)
         didMutate()
@@ -311,6 +348,15 @@ class NetWorthViewModel {
         didMutate()
     }
 
+    func updateItem(_ item: FinancialItem, name: String, amount: Int, category: String, month: Int) {
+        item.name = name
+        item.amount = amount
+        item.category = category
+        item.month = month
+        item.updatedAt = .now
+        didMutate()
+    }
+
     // MARK: - Search / Filter
 
     func filteredItems(_ items: [FinancialItem]) -> [FinancialItem] {
@@ -332,6 +378,9 @@ class NetWorthViewModel {
     }
 
     func addGoal(_ goal: Goal) {
+        if goal.goalType == "liability" {
+            goal.startAmount = debtWhenSet(goal)
+        }
         modelContext.insert(goal)
         didMutate()
     }
@@ -341,80 +390,60 @@ class NetWorthViewModel {
         didMutate()
     }
 
+    /// Tracked years that have at least one item, newest first.
+    private var yearsWithData: [Int] {
+        let yearsWithItems = Set((assets + liabilities).map(\.year))
+        return years.filter { yearsWithItems.contains($0) }
+    }
+
+    /// The most recent year, not in the future, that has items. Goal progress is measured
+    /// against it, since the calendar year may not have been filled in yet.
+    var latestYearWithData: Int? {
+        let thisYear = Calendar.current.component(.year, from: .now)
+        return yearsWithData.first { $0 <= thisYear }
+    }
+
+    /// How far along a goal is, from 0 (not started) to 1 (reached).
     func goalProgress(for goal: Goal) -> Double {
-        let currentYear = Calendar.current.component(.year, from: .now)
-        let yearData = getYearData(for: currentYear)
-        let currentAmount: Int
+        guard let year = latestYearWithData else { return 0 }
+        let current = getYearData(for: year)
+
+        let progress: Double
         switch goal.goalType {
-        case "netWorth": currentAmount = yearData.netWorth
-        case "asset": currentAmount = yearData.assets
-        case "liability": currentAmount = yearData.liabilities
-        default: currentAmount = yearData.netWorth
+        case "liability":
+            // Debt goals count down: progress is the share of the debt paid off since the
+            // goal was set, so owing more than the target no longer reads as "complete".
+            let start = goal.startAmount ?? current.liabilities
+            let toPayOff = start - goal.targetAmount
+            guard toPayOff > 0 else { return current.liabilities <= goal.targetAmount ? 1 : 0 }
+            progress = Double(start - current.liabilities) / Double(toPayOff)
+        case "asset":
+            guard goal.targetAmount > 0 else { return 0 }
+            progress = Double(current.assets) / Double(goal.targetAmount)
+        default:
+            guard goal.targetAmount > 0 else { return 0 }
+            progress = Double(current.netWorth) / Double(goal.targetAmount)
         }
-        guard goal.targetAmount != 0 else { return 0 }
-        return Double(currentAmount) / Double(goal.targetAmount)
+        return min(max(progress, 0), 1)
     }
 
-    // MARK: - Recurring Items
-
-    var recurringItems: [RecurringItem] {
-        _ = refreshToken
-        let descriptor = FetchDescriptor<RecurringItem>(
-            sortBy: [SortDescriptor(\.name)]
-        )
-        return (try? modelContext.fetch(descriptor)) ?? []
-    }
-
-    func addRecurringItem(_ item: RecurringItem) {
-        modelContext.insert(item)
-        didMutate()
-    }
-
-    func deleteRecurringItem(_ item: RecurringItem) {
-        modelContext.delete(item)
-        didMutate()
-    }
-
-    func generateRecurringItems(for year: Int, month: Int) {
-        let activeItems = recurringItems.filter(\.isActive)
-
-        for recurring in activeItems {
-            // Check if already generated
-            let existing = assets.filter {
-                $0.name == recurring.name
-                    && $0.year == year
-                    && $0.month == month
-                    && $0.category == recurring.category
-            } + liabilities.filter {
-                $0.name == recurring.name
-                    && $0.year == year
-                    && $0.month == month
-                    && $0.category == recurring.category
-            }
-            guard existing.isEmpty else { continue }
-
-            let shouldGenerate: Bool
-            switch recurring.frequency {
-            case "monthly": shouldGenerate = true
-            case "quarterly": shouldGenerate = [1, 4, 7, 10].contains(month)
-            case "annually": shouldGenerate = month == 1
-            default: shouldGenerate = false
-            }
-
-            if shouldGenerate {
-                let item = FinancialItem(
-                    name: recurring.name,
-                    amount: recurring.amount,
-                    year: year,
-                    month: month,
-                    category: recurring.category,
-                    itemType: recurring.itemType,
-                    isRecurring: true
-                )
-                modelContext.insert(item)
-            }
+    /// Total liabilities in the latest year with data on or before the year the goal was
+    /// created (or the earliest year with data if there's none): the debt a goal starts from.
+    private func debtWhenSet(_ goal: Goal) -> Int? {
+        let createdYear = Calendar.current.component(.year, from: goal.createdAt)
+        let candidates = yearsWithData
+        guard let year = candidates.first(where: { $0 <= createdYear }) ?? candidates.last else {
+            return nil
         }
-        didMutate()
+        return getYearData(for: year).liabilities
+    }
+
+    /// Debt goals made before `startAmount` existed get it filled in once from the data, so
+    /// their starting point stays fixed when that year's numbers are edited later.
+    private func backfillDebtGoalStarts() {
+        for goal in goals where goal.goalType == "liability" && goal.startAmount == nil {
+            goal.startAmount = debtWhenSet(goal)
+        }
     }
 
     // MARK: - Milestones
@@ -488,7 +517,8 @@ class NetWorthViewModel {
         var csv = "Name,Amount,Category,Type,Month\n"
         let allItems = (assets + liabilities).filter { $0.year == year }
         for item in allItems.sorted(by: { $0.name < $1.name }) {
-            csv += "\(item.name),\(item.amount),\(item.category),\(item.itemType),\(item.month)\n"
+            let fields = [item.name, String(item.amount), item.category, item.itemType, String(item.month)]
+            csv += fields.map(csvField).joined(separator: ",") + "\n"
         }
         return csv
     }
@@ -525,6 +555,17 @@ class NetWorthViewModel {
         default: return nil
         }
     }
+}
+
+// MARK: - CSV Utility
+
+/// Quotes a CSV field that contains a comma, quote or line break, doubling any
+/// embedded quotes (RFC 4180), so names like "Smith, John" stay in one column.
+func csvField(_ value: String) -> String {
+    guard value.contains(where: { $0 == "," || $0 == "\"" || $0.isNewline }) else {
+        return value
+    }
+    return "\"" + value.replacing("\"", with: "\"\"") + "\""
 }
 
 // MARK: - Number Formatting Utility

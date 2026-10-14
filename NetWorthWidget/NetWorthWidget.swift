@@ -47,32 +47,31 @@ struct NetWorthProvider: TimelineProvider {
         completion(Timeline(entries: [entry], policy: .after(nextUpdate)))
     }
 
-    private func fetchCurrentEntry() -> NetWorthEntry {
-        let schema = Schema([
-            FinancialItem.self,
-            TrackedYear.self,
-            UserSettings.self,
-            Goal.self,
-            RecurringItem.self,
-            Milestone.self,
-            CustomCategory.self,
-        ])
-
-        let config = ModelConfiguration(
-            schema: schema,
-            groupContainer: .identifier("group.com.beastmode.myNetworth")
+    private func emptyEntry() -> NetWorthEntry {
+        NetWorthEntry(
+            date: .now,
+            netWorth: 0,
+            assets: 0,
+            liabilities: 0,
+            percentageChange: nil,
+            currencyCode: "USD",
+            year: Calendar.current.component(.year, from: .now)
         )
+    }
+
+    private func fetchCurrentEntry() -> NetWorthEntry {
+        // Only open a store the app has already created. Opening a missing one would create
+        // an empty store, and the app would then skip copying the user's existing data into it.
+        guard let storeURL = SharedStore.groupStoreURL,
+              FileManager.default.fileExists(atPath: storeURL.path(percentEncoded: false)) else {
+            return emptyEntry()
+        }
+
+        let schema = SharedStore.schema
+        let config = ModelConfiguration(schema: schema, url: storeURL, cloudKitDatabase: .none)
 
         guard let container = try? ModelContainer(for: schema, configurations: [config]) else {
-            return NetWorthEntry(
-                date: .now,
-                netWorth: 0,
-                assets: 0,
-                liabilities: 0,
-                percentageChange: nil,
-                currencyCode: "USD",
-                year: Calendar.current.component(.year, from: .now)
-            )
+            return emptyEntry()
         }
 
         let context = ModelContext(container)

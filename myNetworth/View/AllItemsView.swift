@@ -71,12 +71,12 @@ struct AllItemsView: View {
                         // Assets Section
                         if !yearAssets.isEmpty {
                             ItemSection(
+                                viewModel: viewModel,
                                 title: "Assets",
                                 icon: "dollarsign.circle.fill",
                                 color: Theme.positiveAmount,
                                 items: yearAssets,
                                 type: .asset,
-                                currencyCode: viewModel.currencyCode,
                                 onDelete: { viewModel.deleteAsset($0) }
                             )
                         }
@@ -84,12 +84,12 @@ struct AllItemsView: View {
                         // Liabilities Section
                         if !yearLiabilities.isEmpty {
                             ItemSection(
+                                viewModel: viewModel,
                                 title: "Liabilities",
                                 icon: "creditcard.fill",
                                 color: Theme.negativeAmount,
                                 items: yearLiabilities,
                                 type: .liability,
-                                currencyCode: viewModel.currencyCode,
                                 onDelete: { viewModel.deleteLiability($0) }
                             )
                         }
@@ -139,12 +139,12 @@ struct StatCard: View {
 // MARK: - Item Section
 
 struct ItemSection: View {
+    var viewModel: NetWorthViewModel
     let title: String
     let icon: String
     let color: Color
     let items: [FinancialItem]
     let type: ItemType
-    let currencyCode: String
     let onDelete: (FinancialItem) -> Void
 
     var body: some View {
@@ -167,9 +167,9 @@ struct ItemSection: View {
 
             ForEach(items) { item in
                 FinancialItemCard(
+                    viewModel: viewModel,
                     item: item,
                     type: type,
-                    currencyCode: currencyCode,
                     onDelete: { onDelete(item) }
                 )
             }
@@ -180,11 +180,12 @@ struct ItemSection: View {
 // MARK: - Financial Item Card
 
 struct FinancialItemCard: View {
+    var viewModel: NetWorthViewModel
     let item: FinancialItem
     let type: ItemType
-    let currencyCode: String
     let onDelete: () -> Void
     @State private var showingEditSheet = false
+    @State private var showingDeleteConfirmation = false
 
     var body: some View {
         Button {
@@ -212,7 +213,7 @@ struct FinancialItemCard: View {
                         }
                     }
 
-                    Text(item.amount, format: .currency(code: currencyCode).precision(.fractionLength(0)))
+                    Text(item.amount, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
                         .font(.title2)
                         .bold()
                         .foregroundStyle(type == .asset ? Theme.positiveAmount : Theme.negativeAmount)
@@ -220,9 +221,11 @@ struct FinancialItemCard: View {
 
                 Spacer()
 
-                Button("Delete", systemImage: "trash", action: onDelete)
-                    .foregroundStyle(.red.opacity(0.8))
-                    .labelStyle(.iconOnly)
+                Button("Delete", systemImage: "trash") {
+                    showingDeleteConfirmation = true
+                }
+                .foregroundStyle(.red.opacity(0.8))
+                .labelStyle(.iconOnly)
             }
             .padding()
             .background(Theme.cardBackground)
@@ -230,7 +233,16 @@ struct FinancialItemCard: View {
         }
         .buttonStyle(.plain)
         .sheet(isPresented: $showingEditSheet) {
-            EditItemView(item: item, currencyCode: currencyCode)
+            EditItemView(viewModel: viewModel, item: item)
+        }
+        .confirmationDialog(
+            "Delete \(item.name)?",
+            isPresented: $showingDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive, action: onDelete)
+        } message: {
+            Text("This can't be undone.")
         }
     }
 }
@@ -238,40 +250,53 @@ struct FinancialItemCard: View {
 // MARK: - Edit Item View
 
 struct EditItemView: View {
-    @Bindable var item: FinancialItem
-    let currencyCode: String
+    var viewModel: NetWorthViewModel
+    let item: FinancialItem
     @Environment(\.dismiss) private var dismiss
 
+    // Edits go to a draft and are only written back on Done, so Cancel discards them.
+    @State private var name: String
+    @State private var amount: Int
+    @State private var category: String
+    @State private var month: Int
+
+    init(viewModel: NetWorthViewModel, item: FinancialItem) {
+        self.viewModel = viewModel
+        self.item = item
+        _name = State(initialValue: item.name)
+        _amount = State(initialValue: item.amount)
+        _category = State(initialValue: item.category)
+        _month = State(initialValue: item.month)
+    }
+
     private var categories: [String] {
-        if item.itemType == "asset" {
-            AssetCategories.allCases.map(\.rawValue)
-        } else {
-            LiabilityCategories.allCases.map(\.rawValue)
-        }
+        let names = viewModel.allCategoryNames(for: item.itemType == "asset" ? .asset : .liability)
+        // Keep the item's current category selectable even if it has since been deleted.
+        return names.contains(item.category) ? names : names + [item.category]
     }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section("Details") {
-                    TextField("Name", text: $item.name)
-                    TextField("Amount", value: $item.amount, format: .number)
+                    TextField("Name", text: $name)
+                    TextField("Amount", value: $amount, format: .number)
                         .keyboardType(.numberPad)
                 }
 
                 Section("Category") {
-                    Picker("Category", selection: $item.category) {
-                        ForEach(categories, id: \.self) { category in
-                            Text(category).tag(category)
+                    Picker("Category", selection: $category) {
+                        ForEach(categories, id: \.self) { option in
+                            Text(option).tag(option)
                         }
                     }
                 }
 
                 Section("Month") {
-                    Picker("Month", selection: $item.month) {
+                    Picker("Month", selection: $month) {
                         Text("Yearly (no specific month)").tag(0)
-                        ForEach(1...12, id: \.self) { month in
-                            Text(Calendar.current.monthSymbols[month - 1]).tag(month)
+                        ForEach(1...12, id: \.self) { option in
+                            Text(Calendar.current.monthSymbols[option - 1]).tag(option)
                         }
                     }
                 }
@@ -281,9 +306,10 @@ struct EditItemView: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
-                        item.updatedAt = .now
+                        viewModel.updateItem(item, name: name, amount: amount, category: category, month: month)
                         dismiss()
                     }
+                    .disabled(name.isEmpty)
                 }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
@@ -305,7 +331,12 @@ struct EditItemView: View {
     )
     let item = FinancialItem(name: "Test", amount: 32_322, year: 2025, category: "Cash", itemType: "asset")
     container.mainContext.insert(item)
-    return FinancialItemCard(item: item, type: .asset, currencyCode: "USD", onDelete: {})
+    return FinancialItemCard(
+        viewModel: NetWorthViewModel(modelContext: container.mainContext),
+        item: item,
+        type: .asset,
+        onDelete: {}
+    )
         .padding()
         .background(Color.black)
 }
