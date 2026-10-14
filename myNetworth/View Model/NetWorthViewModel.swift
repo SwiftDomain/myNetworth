@@ -66,14 +66,78 @@ class NetWorthViewModel {
         return years.first { $0 <= currentYear }
     }
 
-    // MARK: - Debt Payoff Order
+    // MARK: - Debt Payoff Planner
 
-    /// Liabilities for the given year ordered for the debt snowball method
-    /// (smallest balance first, so quick wins come first).
-    func snowballOrder(for year: Int) -> [FinancialItem] {
-        liabilities
-            .filter { $0.year == year }
-            .sorted { $0.amount < $1.amount }
+    var debtTerms: [DebtTerms] {
+        _ = refreshToken
+        let descriptor = FetchDescriptor<DebtTerms>(
+            sortBy: [SortDescriptor(\.name)]
+        )
+        return (try? modelContext.fetch(descriptor)) ?? []
+    }
+
+    /// Debts in the current snapshot year, largest first.
+    var currentDebts: [FinancialItem] {
+        guard let year = currentDebtYear else { return [] }
+        return liabilities
+            .filter { $0.year == year && $0.amount > 0 }
+            .sorted { $0.amount > $1.amount }
+    }
+
+    /// Saved terms for a debt, matched by name and category so they carry across years.
+    func terms(for debt: FinancialItem) -> DebtTerms? {
+        debtTerms.first { $0.name == debt.name && $0.category == debt.category }
+    }
+
+    /// Whether a debt is in the payoff plan. Mortgages are left out by default so a
+    /// long-term loan doesn't swamp the plan.
+    func isIncludedInPlan(_ debt: FinancialItem) -> Bool {
+        terms(for: debt)?.isIncludedInPlan ?? (debt.category != LiabilityCategories.mortgage.rawValue)
+    }
+
+    func updateTerms(for debt: FinancialItem, annualRate: Double, minimumPayment: Int, isIncluded: Bool) {
+        if let saved = terms(for: debt) {
+            saved.annualRate = annualRate
+            saved.minimumPayment = minimumPayment
+            saved.isIncludedInPlan = isIncluded
+        } else {
+            let newTerms = DebtTerms(
+                name: debt.name,
+                category: debt.category,
+                annualRate: annualRate,
+                minimumPayment: minimumPayment,
+                isIncludedInPlan: isIncluded
+            )
+            modelContext.insert(newTerms)
+        }
+        didMutate()
+    }
+
+    func setIncludedInPlan(_ isIncluded: Bool, for debt: FinancialItem) {
+        let saved = terms(for: debt)
+        updateTerms(
+            for: debt,
+            annualRate: saved?.annualRate ?? 0,
+            minimumPayment: saved?.minimumPayment ?? 0,
+            isIncluded: isIncluded
+        )
+    }
+
+    /// The debts in the plan, with their terms, ready for `DebtPlanner`. Debts without
+    /// saved terms count as 0% interest with no minimum payment.
+    var plannerDebts: [PlannerDebt] {
+        currentDebts
+            .filter { isIncludedInPlan($0) }
+            .map { debt in
+                let saved = terms(for: debt)
+                return PlannerDebt(
+                    id: debt.id,
+                    name: debt.name,
+                    balance: debt.amount,
+                    annualRate: saved?.annualRate ?? 0,
+                    minimumPayment: saved?.minimumPayment ?? 0
+                )
+            }
     }
 
     // MARK: - Settings

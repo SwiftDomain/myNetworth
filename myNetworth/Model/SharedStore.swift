@@ -26,6 +26,7 @@ enum SharedStore {
             RecurringItem.self,
             Milestone.self,
             CustomCategory.self,
+            DebtTerms.self,
         ])
     }
 

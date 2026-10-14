@@ -176,6 +176,29 @@ class CustomCategory {
     }
 }
 
+// MARK: - Debt Terms Model
+
+/// A debt's interest rate, minimum payment and whether it's in the payoff plan. Matched to
+/// liabilities by name and category, so the terms carry over to the same debt every year.
+@Model
+class DebtTerms {
+    var name: String = ""
+    var category: String = ""
+    /// Annual interest rate as a percentage, e.g. 24.9.
+    var annualRate: Double = 0
+    var minimumPayment: Int = 0
+    var isIncludedInPlan: Bool = true
+    var createdAt: Date = Date.now
+
+    init(name: String, category: String, annualRate: Double, minimumPayment: Int, isIncludedInPlan: Bool) {
+        self.name = name
+        self.category = category
+        self.annualRate = annualRate
+        self.minimumPayment = minimumPayment
+        self.isIncludedInPlan = isIncludedInPlan
+    }
+}
+
 // MARK: - Computed Yearly Data (not persisted)
 
 struct YearlyData: Identifiable {
