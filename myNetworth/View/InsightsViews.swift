@@ -49,6 +49,7 @@ struct WhatChangedCard: View {
                     .font(.subheadline)
                     .foregroundStyle(Theme.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
+                    .privacySensitive()
 
                 if narration != nil {
                     Text("Written on this device by Apple Intelligence")
@@ -67,6 +68,7 @@ struct WhatChangedCard: View {
                         .font(.title3)
                         .bold()
                         .foregroundStyle(effectColor(change.change))
+                        .privacySensitive()
                 }
 
                 Spacer()
@@ -82,6 +84,7 @@ struct WhatChangedCard: View {
             Text("Assets \(signed(change.assetsChange)) · Debts \(signed(change.liabilitiesChange))")
                 .font(.caption)
                 .foregroundStyle(Theme.textSecondary)
+                .privacySensitive()
 
             if !change.gains.isEmpty {
                 moverList("Biggest boosts", change.gains)
@@ -100,10 +103,10 @@ struct WhatChangedCard: View {
                 namesLine("Paid off", paidOff)
             }
             if !newAssets.isEmpty {
-                namesLine("New", newAssets)
+                namesLine("New", newAssets, showsAmounts: true)
             }
             if !newDebts.isEmpty {
-                namesLine("New debt", newDebts)
+                namesLine("New debt", newDebts, showsAmounts: true)
             }
             if !goneAssets.isEmpty {
                 namesLine("No longer listed", goneAssets)
@@ -136,12 +139,13 @@ struct WhatChangedCard: View {
                         .font(.subheadline)
                         .bold()
                         .foregroundStyle(effectColor(item.netWorthEffect))
+                        .privacySensitive()
                 }
             }
         }
     }
 
-    private func namesLine(_ title: String, _ names: [String]) -> some View {
+    private func namesLine(_ title: String, _ names: [String], showsAmounts: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
                 .font(.caption)
@@ -149,6 +153,7 @@ struct WhatChangedCard: View {
             Text(shortList(names))
                 .font(.subheadline)
                 .foregroundStyle(Theme.textPrimary)
+                .privacySensitive(showsAmounts)
         }
     }
 
@@ -217,6 +222,7 @@ struct OverallInsightsCard: View {
                                     .font(.subheadline)
                                     .bold()
                                     .foregroundStyle(effectColor(category.netWorthEffect))
+                                    .privacySensitive()
                             }
                         }
                     }
@@ -238,6 +244,7 @@ struct OverallInsightsCard: View {
                 .font(.title3)
                 .bold()
                 .foregroundStyle(effectColor(value))
+                .privacySensitive()
         }
     }
 
@@ -250,6 +257,7 @@ struct OverallInsightsCard: View {
             Text("\(String(step.year)): \(signed(step.change)) vs \(String(step.previousYear))")
                 .font(.subheadline)
                 .foregroundStyle(Theme.textPrimary)
+                .privacySensitive()
         }
     }
 

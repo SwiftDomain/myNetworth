@@ -86,7 +86,7 @@ struct CarryForwardTests {
         #expect(viewModel.yearlyItems(in: 2025).count == 1)
     }
 
-    @Test("Update Balances saves only the amounts that changed")
+    @Test("Update Balances saves new amounts and marks confirmed ones as checked")
     func updateAmounts() throws {
         let store = try TestStore()
         let viewModel = store.viewModel
@@ -94,17 +94,36 @@ struct CarryForwardTests {
         let savings = store.addItem("Savings", 5_000, year: 2025, category: "Cash", asset: true)
         let car = store.addItem("Car", 9_000, year: 2025, category: "Vehicle", asset: true)
         let visa = store.addItem("Visa", 1_200, year: 2025, category: "Credit Card", asset: false)
-        let visaUpdatedAt = visa.updatedAt
+        let lastMonth = Date.now.addingTimeInterval(-31 * 24 * 60 * 60)
+        for item in [savings, car, visa] {
+            item.updatedAt = lastMonth
+        }
 
-        // Savings was updated, Visa was confirmed as the same, Car was skipped.
+        // Savings was updated, Visa was confirmed as the same, Car wasn't reached.
         viewModel.updateAmounts([savings.id: 6_500, visa.id: 1_200], of: [savings, car, visa])
 
         #expect(savings.amount == 6_500)
         #expect(car.amount == 9_000)
         #expect(visa.amount == 1_200)
-        #expect(visa.updatedAt == visaUpdatedAt)
+        #expect(savings.updatedAt > lastMonth)
+        #expect(visa.updatedAt > lastMonth)
+        #expect(car.updatedAt == lastMonth)
         let year = viewModel.getYearData(for: 2025)
         #expect(year.assets == 15_500)
         #expect(year.liabilities == 1_200)
+    }
+
+    @Test("Copies keep the date their amount was last checked")
+    func copiesKeepUpdateDate() throws {
+        let store = try TestStore()
+        let viewModel = store.viewModel
+        viewModel.addYear(2024)
+        let savings = store.addItem("Savings", 5_000, year: 2024, category: "Cash", asset: true)
+        let lastSummer = Date.now.addingTimeInterval(-120 * 24 * 60 * 60)
+        savings.updatedAt = lastSummer
+
+        viewModel.addYear(2025, copyingItemsFrom: 2024)
+
+        #expect(viewModel.latestEntries(in: 2025).map(\.updatedAt) == [lastSummer])
     }
 }

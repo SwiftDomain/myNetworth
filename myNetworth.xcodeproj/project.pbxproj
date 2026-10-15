@@ -28,6 +28,10 @@
 		3EAA00092F000005001016E5 /* DebtPayoffView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00082F000005001016E5 /* DebtPayoffView.swift */; };
 		3EAA000D2F000007001016E5 /* SharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA000C2F000007001016E5 /* SharedStore.swift */; };
 		3EBC70B02EFF1031009DF832 /* CategoryBreakdownTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EBC70AF2EFF1031009DF832 /* CategoryBreakdownTile.swift */; };
+		3EAA00222F00000D001016E5 /* Dashboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00212F00000D001016E5 /* Dashboard.swift */; };
+		3EAA00242F00000D001016E5 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00232F00000D001016E5 /* MainTabView.swift */; };
+		3EAA00262F00000D001016E5 /* HomeTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00252F00000D001016E5 /* HomeTab.swift */; };
+		3EAA00282F00000D001016E5 /* AccountsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00272F00000D001016E5 /* AccountsTab.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -65,6 +69,10 @@
 		3EAA000C2F000007001016E5 /* SharedStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedStore.swift; sourceTree = "<group>"; };
 		3EBC70AF2EFF1031009DF832 /* CategoryBreakdownTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryBreakdownTile.swift; sourceTree = "<group>"; };
 		3EAA00162F00000C001016E5 /* myNetworthTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = myNetworthTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3EAA00212F00000D001016E5 /* Dashboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dashboard.swift; sourceTree = "<group>"; };
+		3EAA00232F00000D001016E5 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		3EAA00252F00000D001016E5 /* HomeTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTab.swift; sourceTree = "<group>"; };
+		3EAA00272F00000D001016E5 /* AccountsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountsTab.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -138,6 +146,9 @@
 				3EAA00042F000003001016E5 /* SettingsView.swift */,
 				3EAA00062F000004001016E5 /* GoalsView.swift */,
 				3EAA00082F000005001016E5 /* DebtPayoffView.swift */,
+				3EAA00232F00000D001016E5 /* MainTabView.swift */,
+				3EAA00252F00000D001016E5 /* HomeTab.swift */,
+				3EAA00272F00000D001016E5 /* AccountsTab.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -152,6 +163,7 @@
 				3EAA00122F00000A001016E5 /* Insights.swift */,
 				3EAA00022F000002001016E5 /* MigrationManager.swift */,
 				3EAA000C2F000007001016E5 /* SharedStore.swift */,
+				3EAA00212F00000D001016E5 /* Dashboard.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -291,6 +303,10 @@
 				3EAA00072F000004001016E5 /* GoalsView.swift in Sources */,
 				3EAA00092F000005001016E5 /* DebtPayoffView.swift in Sources */,
 				3EAA000D2F000007001016E5 /* SharedStore.swift in Sources */,
+				3EAA00222F00000D001016E5 /* Dashboard.swift in Sources */,
+				3EAA00242F00000D001016E5 /* MainTabView.swift in Sources */,
+				3EAA00262F00000D001016E5 /* HomeTab.swift in Sources */,
+				3EAA00282F00000D001016E5 /* AccountsTab.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

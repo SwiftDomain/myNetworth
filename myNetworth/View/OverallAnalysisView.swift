@@ -102,6 +102,7 @@ struct OverallAnalysisView: View {
                                             Text(data.assets, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
                                                 .font(.subheadline)
                                                 .foregroundStyle(Theme.positiveAmount)
+                                                .privacySensitive()
                                         }
 
                                         Spacer()
@@ -113,6 +114,7 @@ struct OverallAnalysisView: View {
                                             Text(data.liabilities, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
                                                 .font(.subheadline)
                                                 .foregroundStyle(Theme.negativeAmount)
+                                                .privacySensitive()
                                         }
 
                                         Spacer()
@@ -125,6 +127,7 @@ struct OverallAnalysisView: View {
                                                 .font(.subheadline)
                                                 .bold()
                                                 .foregroundStyle(.blue)
+                                                .privacySensitive()
                                         }
                                     }
                                 }
@@ -194,6 +197,7 @@ struct NetWorthChartView: View {
                         .foregroundStyle(.white)
                 }
             }
+            .privateChartAxis()
         }
         .padding()
         .background(Theme.cardBackground)
@@ -296,6 +300,7 @@ struct ComparisonChartView: View {
                 }
                 .padding(.vertical, 8)
             }
+            .privateChartAxis()
         }
         .padding()
         .background(Theme.cardBackground)

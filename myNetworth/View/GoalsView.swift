@@ -95,6 +95,7 @@ struct GoalCard: View {
                     .font(.subheadline)
                     .bold()
                     .foregroundStyle(Theme.textPrimary)
+                    .privacySensitive()
 
                 Spacer()
 

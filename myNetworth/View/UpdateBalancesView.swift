@@ -125,6 +125,7 @@ struct UpdateBalancesView: View {
                 Text("Last amount: \(item.amount, format: currency)")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                    .privacySensitive()
 
                 TextField("New amount", text: $amountText)
                     .keyboardType(.numberPad)
@@ -193,10 +194,12 @@ struct UpdateBalancesView: View {
                         .foregroundStyle(.secondary)
                     Text(after, format: currency)
                         .font(.largeTitle.bold())
+                        .privacySensitive()
                     if netWorthChange != 0 {
                         Text("\(netWorthChange > 0 ? "+" : "-")\(abs(netWorthChange), format: currency) from \(before, format: currency)")
                             .font(.subheadline)
                             .foregroundStyle(netWorthChange > 0 ? Theme.positiveAmount : Theme.negativeAmount)
+                            .privacySensitive()
                     }
                 }
 
@@ -208,11 +211,13 @@ struct UpdateBalancesView: View {
                                 Spacer()
                                 Text(item.amount, format: currency)
                                     .foregroundStyle(.secondary)
+                                    .privacySensitive()
                                 Image(systemName: "arrow.right")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                 Text(newAmounts[item.id] ?? item.amount, format: currency)
                                     .bold()
+                                    .privacySensitive()
                             }
                             .font(.subheadline)
                         }
@@ -226,7 +231,7 @@ struct UpdateBalancesView: View {
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 12) {
                 Button {
-                    viewModel.updateAmounts(newAmounts, of: changedItems)
+                    viewModel.updateAmounts(newAmounts, of: items)
                     dismiss()
                 } label: {
                     Text(saveButtonTitle)
