@@ -131,12 +131,8 @@ struct BiometricLockView: View {
 struct GoalPreviewCard: View {
     var viewModel: NetWorthViewModel
 
-    private var activeGoals: [Goal] {
-        viewModel.goals.filter { !$0.isAchieved }
-    }
-
     var body: some View {
-        if let goal = activeGoals.first {
+        if let goal = viewModel.featuredGoal {
             let progress = viewModel.goalProgress(for: goal)
             VStack(alignment: .leading, spacing: 8) {
                 HStack {

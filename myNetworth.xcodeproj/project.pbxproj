@@ -44,6 +44,10 @@
 		3EAA00472F000010001016E5 /* Coaching.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00462F000010001016E5 /* Coaching.swift */; };
 		3EAA00492F000011001016E5 /* Assistant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00482F000011001016E5 /* Assistant.swift */; };
 		3EAA004B2F000011001016E5 /* AskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA004A2F000011001016E5 /* AskView.swift */; };
+		3EAA004D2F000012001016E5 /* GoalCoach.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA004C2F000012001016E5 /* GoalCoach.swift */; };
+		3EAA004E2F000012001016E5 /* GoalCoach.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA004C2F000012001016E5 /* GoalCoach.swift */; };
+		3EAA00502F000012001016E5 /* CSVImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA004F2F000012001016E5 /* CSVImport.swift */; };
+		3EAA00522F000012001016E5 /* CSVImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00512F000012001016E5 /* CSVImportView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -118,6 +122,9 @@
 		3EAA00462F000010001016E5 /* Coaching.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coaching.swift; sourceTree = "<group>"; };
 		3EAA00482F000011001016E5 /* Assistant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Assistant.swift; sourceTree = "<group>"; };
 		3EAA004A2F000011001016E5 /* AskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskView.swift; sourceTree = "<group>"; };
+		3EAA004C2F000012001016E5 /* GoalCoach.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalCoach.swift; sourceTree = "<group>"; };
+		3EAA004F2F000012001016E5 /* CSVImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVImport.swift; sourceTree = "<group>"; };
+		3EAA00512F000012001016E5 /* CSVImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVImportView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -206,6 +213,7 @@
 				3EAA00272F00000D001016E5 /* AccountsTab.swift */,
 				3EAA00442F00000F001016E5 /* QuickStartView.swift */,
 				3EAA004A2F000011001016E5 /* AskView.swift */,
+				3EAA00512F000012001016E5 /* CSVImportView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -226,6 +234,8 @@
 				3EAA00422F00000F001016E5 /* QuickStart.swift */,
 				3EAA00462F000010001016E5 /* Coaching.swift */,
 				3EAA00482F000011001016E5 /* Assistant.swift */,
+				3EAA004C2F000012001016E5 /* GoalCoach.swift */,
+				3EAA004F2F000012001016E5 /* CSVImport.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -418,6 +428,9 @@
 				3EAA00472F000010001016E5 /* Coaching.swift in Sources */,
 				3EAA00492F000011001016E5 /* Assistant.swift in Sources */,
 				3EAA004B2F000011001016E5 /* AskView.swift in Sources */,
+				3EAA004D2F000012001016E5 /* GoalCoach.swift in Sources */,
+				3EAA00502F000012001016E5 /* CSVImport.swift in Sources */,
+				3EAA00522F000012001016E5 /* CSVImportView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -436,6 +449,7 @@
 				3EAA002B2F00000E001016E5 /* WidgetSnapshot.swift in Sources */,
 				3EAA00312F00000E001016E5 /* FinancialItem.swift in Sources */,
 				3EAA00322F00000E001016E5 /* SharedStore.swift in Sources */,
+				3EAA004E2F000012001016E5 /* GoalCoach.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
