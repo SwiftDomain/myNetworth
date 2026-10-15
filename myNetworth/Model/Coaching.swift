@@ -19,6 +19,9 @@ enum GoalPace: Equatable {
     case behind(perMonth: Int)
     /// There isn't enough history to judge the pace; `perMonth` a month makes the date.
     case needs(perMonth: Int)
+    /// The goal has no target date; at the recent pace it's reached around `projected`,
+    /// or nil when the pace is unknown or going the wrong way.
+    case noDate(projected: Date?)
 }
 
 enum GoalCoach {
@@ -29,10 +32,16 @@ enum GoalCoach {
     /// Judges a goal's pace.
     /// - Parameters:
     ///   - remaining: How far is left to go, in the goal's direction.
-    ///   - monthsLeft: Whole months until the target date, 0 once it has passed.
+    ///   - monthsLeft: Whole months until the target date, 0 once it has passed, or nil for a
+    ///     goal with no target date.
     ///   - pacePerMonth: Recent progress per month in the goal's direction, or nil if unknown.
-    static func pace(remaining: Int, monthsLeft: Int, pacePerMonth: Double?, now: Date = .now) -> GoalPace {
+    static func pace(remaining: Int, monthsLeft: Int?, pacePerMonth: Double?, now: Date = .now) -> GoalPace {
         guard remaining > 0 else { return .reached }
+        guard let monthsLeft else {
+            // Without a date there's nothing to be behind; only when the pace gets there.
+            guard let pacePerMonth, pacePerMonth > 0 else { return .noDate(projected: nil) }
+            return .noDate(projected: projectedDate(remaining: remaining, pacePerMonth: pacePerMonth, now: now))
+        }
         guard monthsLeft > 0 else { return .overdue(remaining: remaining) }
 
         let needed = Double(remaining) / Double(monthsLeft)
@@ -40,9 +49,13 @@ enum GoalCoach {
         guard let pacePerMonth else { return .needs(perMonth: neededPerMonth) }
         guard pacePerMonth > 0, pacePerMonth >= needed else { return .behind(perMonth: neededPerMonth) }
 
+        return .onTrack(projected: projectedDate(remaining: remaining, pacePerMonth: pacePerMonth, now: now))
+    }
+
+    /// When `remaining` is covered at `pacePerMonth`, counting a part month as one.
+    private static func projectedDate(remaining: Int, pacePerMonth: Double, now: Date) -> Date {
         let monthsToGo = Int((Double(remaining) / pacePerMonth).rounded(.up))
-        let projected = Calendar.current.date(byAdding: .month, value: monthsToGo, to: now) ?? now
-        return .onTrack(projected: projected)
+        return Calendar.current.date(byAdding: .month, value: monthsToGo, to: now) ?? now
     }
 
     /// Whole months from `now` until `target`, counting a part month as one, or 0 when the

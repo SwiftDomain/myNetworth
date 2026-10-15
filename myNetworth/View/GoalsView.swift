@@ -99,9 +99,12 @@ struct GoalCard: View {
 
                 Spacer()
 
-                Text("By: \(goal.targetDate, format: .dateTime.year().month())")
-                    .font(.caption)
-                    .foregroundStyle(Theme.textSecondary)
+                // Goals without a date say so in the pace line below.
+                if goal.hasTargetDate {
+                    Text("By: \(goal.targetDate, format: .dateTime.year().month())")
+                        .font(.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                }
             }
 
             ProgressView(value: min(max(progress, 0), 1))
@@ -139,6 +142,7 @@ struct AddGoalView: View {
     @State private var title = ""
     @State private var targetAmount = 0
     @State private var targetDate = Date.now.addingTimeInterval(365 * 24 * 60 * 60)
+    @State private var hasTargetDate = true
     @State private var goalType = "netWorth"
 
     var body: some View {
@@ -150,7 +154,11 @@ struct AddGoalView: View {
                     TextField("Target Amount", value: $targetAmount, format: .number)
                         .keyboardType(.numberPad)
 
-                    DatePicker("Target Date", selection: $targetDate, displayedComponents: .date)
+                    Toggle("Target Date", isOn: $hasTargetDate)
+
+                    if hasTargetDate {
+                        DatePicker("Date", selection: $targetDate, displayedComponents: .date)
+                    }
 
                     Picker("Goal Type", selection: $goalType) {
                         Text("Net Worth").tag("netWorth")
@@ -160,8 +168,13 @@ struct AddGoalView: View {
                 } header: {
                     Text("Goal Details")
                 } footer: {
-                    if goalType == "liability" {
-                        Text("Progress counts down from your debt today to the target amount. Enter 0 to aim for debt-free.")
+                    VStack(alignment: .leading, spacing: 6) {
+                        if goalType == "liability" {
+                            Text("Progress counts down from your debt today to the target amount. Enter 0 to aim for debt-free.")
+                        }
+                        if !hasTargetDate {
+                            Text("Without a date, the goal shows when you'd reach it at your current pace.")
+                        }
                     }
                 }
             }
@@ -175,9 +188,10 @@ struct AddGoalView: View {
                         let goal = Goal(
                             title: title,
                             targetAmount: targetAmount,
-                            targetDate: targetDate,
+                            targetDate: hasTargetDate ? targetDate : .distantFuture,
                             goalType: goalType
                         )
+                        goal.hasTargetDate = hasTargetDate
                         viewModel.addGoal(goal)
                         dismiss()
                     }
@@ -235,6 +249,10 @@ struct GoalPaceLabel: View {
         case .overdue(let remaining):
             Text("Target date passed · \(remaining, format: currency) to go")
                 .privacySensitive()
+        case .noDate(let projected?):
+            Text("No target date · at your pace, around \(projected, format: monthYear)")
+        case .noDate(nil):
+            Text("No target date")
         }
     }
 
@@ -245,6 +263,7 @@ struct GoalPaceLabel: View {
         case .behind: "exclamationmark.triangle"
         case .needs: "calendar"
         case .overdue: "clock.badge.exclamationmark"
+        case .noDate: "flag"
         }
     }
 
@@ -253,6 +272,7 @@ struct GoalPaceLabel: View {
         case .reached, .onTrack: Theme.positiveAmount
         case .behind, .overdue: .orange
         case .needs: Theme.textSecondary
+        case .noDate(let projected): projected == nil ? Theme.textSecondary : Theme.positiveAmount
         }
     }
 }

@@ -108,6 +108,30 @@ struct AssistantTests {
         #expect(answer(.goals, viewModel) == "Starter fund: reached.")
     }
 
+    @Test("A goal without a date says when the pace gets there")
+    func undatedGoal() throws {
+        let store = try twoYears()
+        let viewModel = store.viewModel
+        let now = Date.now
+        let goal = Goal(title: "Rainy day", targetAmount: 20_000, targetDate: .distantFuture)
+        goal.hasTargetDate = false
+        viewModel.addGoal(goal)
+
+        // Net worth went from 8,000 to 10,000 in a year; 10,000 more at that pace takes 60 months.
+        let projected = try #require(Calendar.current.date(byAdding: .month, value: 60, to: now))
+        let monthYear = Date.FormatStyle.dateTime.month(.abbreviated).year()
+        let text = viewModel.answer(to: .goals, strategy: .snowball, extraPayment: 0, now: now)
+        #expect(text == "Rainy day: no target date; at your pace you'd reach it around \(projected.formatted(monthYear)).")
+
+        let oneYear = try TestStore()
+        oneYear.viewModel.addYear(thisYear)
+        oneYear.addItem("Savings", 5_000, year: thisYear, category: "Cash", asset: true)
+        let undated = Goal(title: "Rainy day", targetAmount: 20_000, targetDate: .distantFuture)
+        undated.hasTargetDate = false
+        oneYear.viewModel.addGoal(undated)
+        #expect(answer(.goals, oneYear.viewModel) == "Rainy day: no target date.")
+    }
+
     @Test("Where most of the money is, with its share")
     func whereMoney() throws {
         let store = try TestStore()
