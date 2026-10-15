@@ -56,6 +56,7 @@ struct AllItemsView: View {
                                 .font(.title2)
                                 .bold()
                                 .foregroundStyle(.blue)
+                                .privacySensitive()
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding()
@@ -128,6 +129,7 @@ struct StatCard: View {
             Text(amount, format: .currency(code: currencyCode).precision(.fractionLength(0)))
                 .font(.headline)
                 .foregroundStyle(color)
+                .privacySensitive()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
@@ -217,6 +219,7 @@ struct FinancialItemCard: View {
                         .font(.title2)
                         .bold()
                         .foregroundStyle(type == .asset ? Theme.positiveAmount : Theme.negativeAmount)
+                        .privacySensitive()
                 }
 
                 Spacer()

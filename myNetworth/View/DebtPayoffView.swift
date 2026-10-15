@@ -11,11 +11,14 @@ import SwiftData
 /// Plans paying off the current year's debts: compares the snowball and avalanche methods
 /// with an optional extra monthly payment, and shows when each debt gets paid off.
 struct DebtPayoffView: View {
+    /// Where the chosen strategy is saved. Home reads it to suggest the same debt.
+    static let strategyKey = "debtPlanner.strategy"
+
     var viewModel: NetWorthViewModel
 
     // Remembered between visits on this device.
     @AppStorage("debtPlanner.extraPayment") private var extraText = ""
-    @AppStorage("debtPlanner.strategy") private var strategy: PayoffStrategy = .snowball
+    @AppStorage(DebtPayoffView.strategyKey) private var strategy: PayoffStrategy = .snowball
     @State private var debtBeingEdited: FinancialItem?
 
     private var currency: IntegerFormatStyle<Int>.Currency {
@@ -90,10 +93,12 @@ struct DebtPayoffView: View {
                 .font(.title)
                 .bold()
                 .foregroundStyle(Theme.negativeAmount)
+                .privacySensitive()
 
             Text("\(debts.count) of \(viewModel.currentDebts.count) debts · \(minimums, format: currency) a month in minimums")
                 .font(.subheadline)
                 .foregroundStyle(Theme.textSecondary)
+                .privacySensitive()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
@@ -138,6 +143,7 @@ struct DebtPayoffView: View {
                 Text("\(extraPayment, format: currency) a month")
                     .font(.caption)
                     .foregroundStyle(Theme.textSecondary)
+                    .privacySensitive()
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -212,6 +218,7 @@ struct DebtPayoffView: View {
                         .font(.subheadline)
                         .bold()
                         .foregroundStyle(Theme.negativeAmount)
+                        .privacySensitive()
 
                     if other.isPayable && savings > 0 {
                         Text("Saves \(savings, format: currency)")
@@ -222,6 +229,7 @@ struct DebtPayoffView: View {
                             .padding(.vertical, 4)
                             .background(Theme.positiveAmount.opacity(0.2))
                             .clipShape(.rect(cornerRadius: 6))
+                            .privacySensitive()
                     }
                 } else {
                     Text("Not paid off within 50 years at these payments")
@@ -277,6 +285,7 @@ struct DebtPayoffView: View {
                             Text("Then \(nextName) gets \(nextPayment, format: currency) a month")
                                 .font(.caption)
                                 .foregroundStyle(Theme.textSecondary)
+                                .privacySensitive()
                         }
                     }
 
@@ -317,11 +326,13 @@ struct DebtPayoffView: View {
                             Text(debt.amount, format: currency)
                                 .font(.subheadline)
                                 .foregroundStyle(Theme.negativeAmount)
+                                .privacySensitive()
 
                             if let saved, saved.annualRate > 0 || saved.minimumPayment > 0 {
                                 Text("\(saved.annualRate, format: .number.precision(.fractionLength(0...2)))% APR · \(saved.minimumPayment, format: currency) minimum")
                                     .font(.caption)
                                     .foregroundStyle(Theme.textSecondary)
+                                    .privacySensitive()
                             } else {
                                 Label("Add rate and minimum", systemImage: "plus.circle")
                                     .font(.caption)
@@ -408,6 +419,7 @@ struct DebtTermsEditor: View {
                 Section {
                     LabeledContent("Balance") {
                         Text(debt.amount, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
+                            .privacySensitive()
                     }
                     LabeledContent("Category", value: debt.category)
                 }

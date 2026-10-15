@@ -10,7 +10,7 @@ import SwiftData
 
 struct SettingsView: View {
     var viewModel: NetWorthViewModel
-    @Environment(\.dismiss) private var dismiss
+    @AppStorage(PrivacySettings.hideAmountsKey) private var hideAmounts = false
     @State private var exportYear: Int
     @State private var pdfURL: URL?
 
@@ -44,8 +44,13 @@ struct SettingsView: View {
                     }
                 }
 
-                Section("Security") {
+                Section {
                     Toggle("Require Face ID", isOn: Bindable(viewModel.settings).requireBiometricLock)
+                    Toggle("Hide Amounts", isOn: $hideAmounts)
+                } header: {
+                    Text("Privacy")
+                } footer: {
+                    Text("Hide Amounts masks every amount until you turn it off. The eye button at the top of each tab does the same.")
                 }
 
                 Section("Data Management") {
@@ -87,17 +92,18 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
+            .onChange(of: viewModel.years, initial: true) { _, years in
+                // Settings stays open as a tab, so years can be added or deleted meanwhile.
+                if !years.contains(exportYear) {
+                    exportYear = years.first ?? 0
+                }
+            }
             .task(id: "\(exportYear)-\(viewModel.currencyCode)") {
                 // Render only the selected year's report, and only when the year or
                 // currency changes, instead of every year's PDF on every redraw.
                 pdfURL = viewModel.years.contains(exportYear)
                     ? viewModel.generatePDFURL(for: exportYear)
                     : nil
-            }
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
             }
         }
     }
@@ -223,6 +229,7 @@ struct MilestonesListView: View {
                         Text(milestone.targetNetWorth, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
+                            .privacySensitive()
                     }
 
                     Spacer()

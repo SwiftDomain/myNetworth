@@ -25,7 +25,7 @@ struct HomePage: View {
                 if viewModel.settings.requireBiometricLock && !isUnlocked {
                     BiometricLockView(isUnlocked: $isUnlocked)
                 } else {
-                    HomePageContent(viewModel: viewModel)
+                    MainTabView(viewModel: viewModel)
                 }
             } else {
                 ProgressView()
@@ -126,155 +126,6 @@ struct BiometricLockView: View {
     }
 }
 
-// MARK: - Home Page Content
-
-struct HomePageContent: View {
-
-    var viewModel: NetWorthViewModel
-    @State private var showingAddYear = false
-    @State private var showingSettings = false
-    @State private var newYear = Calendar.current.component(.year, from: Date())
-    @State private var navigationPath = NavigationPath()
-    @State private var yearPendingDeletion: Int?
-    @State private var showingDeleteYearConfirmation = false
-
-    var body: some View {
-        NavigationStack(path: $navigationPath) {
-            ZStack {
-                Background(bgColor1: Theme.mainGradient1, bgColor2: Theme.mainGradient2)
-
-                ScrollView {
-                    VStack(spacing: 20) {
-                        // Header
-                        VStack(spacing: 8) {
-                            Image(systemName: "chart.line.uptrend.xyaxis")
-                                .font(.largeTitle)
-                                .foregroundStyle(.blue.opacity(0.8))
-
-                            Text("Net Worth Tracker")
-                                .font(.largeTitle)
-                                .bold()
-                                .foregroundStyle(Theme.textPrimary)
-
-                            Text("Track your financial journey year by year")
-                                .font(.subheadline)
-                                .foregroundStyle(Theme.textSecondary)
-
-                            Text("Family Friendly")
-                                .font(.caption)
-                                .foregroundStyle(.blue.opacity(0.8))
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(Color.blue.opacity(0.2))
-                                .clipShape(.rect(cornerRadius: 8))
-                        }
-                        .padding(.top, 40)
-                        .padding(.bottom, 20)
-
-                        // Active Goals Preview
-                        if !viewModel.goals.filter({ !$0.isAchieved }).isEmpty {
-                            GoalPreviewCard(viewModel: viewModel)
-                        }
-
-                        // Years Grid
-                        if viewModel.years.isEmpty {
-                            EmptyStateView(
-                                icon: "calendar",
-                                message: "No years added yet",
-                                subMessage: "Add a year to start tracking your net worth"
-                            )
-                            .padding(.top, 60)
-                        } else {
-                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                                ForEach(viewModel.years, id: \.self) { year in
-                                    NavigationLink(value: year) {
-                                        YearCard(
-                                            viewModel: viewModel,
-                                            year: year,
-                                            data: viewModel.getYearData(for: year)
-                                        )
-                                    }
-                                    .contextMenu {
-                                        Button(role: .destructive) {
-                                            yearPendingDeletion = year
-                                            showingDeleteYearConfirmation = true
-                                        } label: {
-                                            Label("Delete Year", systemImage: "trash")
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .padding()
-                }
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationDestination(for: Int.self) { year in
-                YearDetailView(viewModel: viewModel, year: year)
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 12) {
-                        Button("Settings", systemImage: "gearshape.fill") {
-                            showingSettings = true
-                        }
-                        .foregroundStyle(.blue)
-
-                        Button("Add Year", systemImage: "plus.circle.fill") {
-                            showingAddYear = true
-                        }
-                        .foregroundStyle(.blue)
-                    }
-                }
-
-                ToolbarItem(placement: .navigationBarLeading) {
-                    HStack(spacing: 12) {
-                        if !viewModel.years.isEmpty {
-                            NavigationLink {
-                                OverallAnalysisView(viewModel: viewModel)
-                            } label: {
-                                Image(systemName: "chart.bar.fill")
-                                    .font(.title3)
-                                    .foregroundStyle(.blue)
-                            }
-                        }
-
-                        // Always shown: GoalsListView is the only place to create a goal.
-                        NavigationLink {
-                            GoalsListView(viewModel: viewModel)
-                        } label: {
-                            Image(systemName: "target")
-                                .font(.title3)
-                                .foregroundStyle(.blue)
-                        }
-                    }
-                }
-            }
-            .sheet(isPresented: $showingAddYear) {
-                AddYearView(viewModel: viewModel, newYear: $newYear) { addedYear in
-                    navigationPath.append(addedYear)
-                }
-            }
-            .sheet(isPresented: $showingSettings) {
-                SettingsView(viewModel: viewModel)
-            }
-            .confirmationDialog(
-                "Delete this year?",
-                isPresented: $showingDeleteYearConfirmation,
-                titleVisibility: .visible,
-                presenting: yearPendingDeletion
-            ) { year in
-                Button("Delete \(String(year))", role: .destructive) {
-                    viewModel.deleteYear(year)
-                }
-            } message: { year in
-                Text("Every asset and liability recorded for \(String(year)) will be permanently deleted.")
-            }
-        }
-    }
-}
-
 // MARK: - Goal Preview Card
 
 struct GoalPreviewCard: View {
@@ -298,6 +149,7 @@ struct GoalPreviewCard: View {
                     Text(goal.targetAmount, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
                         .font(.subheadline)
                         .foregroundStyle(Theme.textSecondary)
+                        .privacySensitive()
                 }
 
                 ProgressView(value: min(max(progress, 0), 1))
@@ -572,7 +424,7 @@ struct Background: View {
     HomePage()
         .modelContainer(for: [
             FinancialItem.self, TrackedYear.self, UserSettings.self,
-            Goal.self, RecurringItem.self, Milestone.self, CustomCategory.self,
+            Goal.self, RecurringItem.self, Milestone.self, CustomCategory.self, DebtTerms.self,
         ], inMemory: true)
 }
 

@@ -108,6 +108,7 @@ struct CategoryRow: View {
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundStyle(Theme.textPrimary)
+                        .privacySensitive()
 
                     Text("\(Int(percentage * 100))%")
                         .font(.caption2)

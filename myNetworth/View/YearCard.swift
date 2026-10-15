@@ -55,6 +55,7 @@ struct YearCard: View {
                     .font(.title2)
                     .bold()
                     .foregroundStyle(data.netWorth >= 0 ? Theme.positiveAmount : Theme.negativeAmount)
+                    .privacySensitive()
 
                 // Percentage change badge
                 if let change = viewModel.percentageChange(for: year) {
@@ -81,6 +82,7 @@ struct YearCard: View {
                     Text(data.assets, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
                         .font(.caption2)
                         .foregroundStyle(Theme.positiveAmount)
+                        .privacySensitive()
                 }
 
                 Spacer()
@@ -93,6 +95,7 @@ struct YearCard: View {
                     Text(data.liabilities, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
                         .font(.caption2)
                         .foregroundStyle(Theme.negativeAmount)
+                        .privacySensitive()
                 }
             }
         }
@@ -108,36 +111,57 @@ struct YearCard: View {
     }
 }
 
-// MARK: - Year Detail View (with Tabs)
+// MARK: - Year Detail View
+
+/// The parts of a year, picked with the segmented control at the top of the year screen.
+enum YearSection: String, CaseIterable, Identifiable {
+    case summary = "Summary"
+    case assets = "Assets"
+    case liabilities = "Debts"
+    case monthly = "Monthly"
+    case all = "All"
+
+    var id: Self { self }
+}
 
 struct YearDetailView: View {
     var viewModel: NetWorthViewModel
-    @State private var selectedTab = 0
+    let year: Int
+    @State private var section: YearSection
     @State private var showingAddSheet = false
 
-    let year: Int
+    init(viewModel: NetWorthViewModel, year: Int, initialSection: YearSection = .summary) {
+        self.viewModel = viewModel
+        self.year = year
+        _section = State(initialValue: initialSection)
+    }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            Tab("Summary", systemImage: "chart.pie.fill", value: 0) {
+        Group {
+            switch section {
+            case .summary:
                 YearSummaryView(viewModel: viewModel, year: year)
-            }
-
-            Tab("Assets", systemImage: "dollarsign.circle.fill", value: 1) {
+            case .assets:
                 AssetsView(viewModel: viewModel, year: year)
-            }
-
-            Tab("Liabilities", systemImage: "creditcard.fill", value: 2) {
+            case .liabilities:
                 LiabilitiesView(viewModel: viewModel, year: year)
-            }
-
-            Tab("Monthly", systemImage: "calendar.badge.clock", value: 3) {
+            case .monthly:
                 MonthlyBreakdownView(viewModel: viewModel, year: year)
-            }
-
-            Tab("All", systemImage: "list.bullet", value: 4) {
+            case .all:
                 AllItemsView(viewModel: viewModel, year: year)
             }
+        }
+        // A segmented control rather than a tab bar, since the app's tab bar is already showing.
+        .safeAreaInset(edge: .top, spacing: 0) {
+            Picker("Section", selection: $section) {
+                ForEach(YearSection.allCases) { section in
+                    Text(section.rawValue).tag(section)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+            .background(.bar)
         }
         .navigationTitle("\(year, format: .number.grouping(.never))")
         .navigationBarTitleDisplayMode(.inline)
@@ -150,7 +174,7 @@ struct YearDetailView: View {
             }
 
             ToolbarItem(placement: .navigationBarTrailing) {
-                if selectedTab == 1 || selectedTab == 2 {
+                if section == .assets || section == .liabilities {
                     Button("Add Item", systemImage: "plus.circle.fill") {
                         showingAddSheet = true
                     }
@@ -161,7 +185,7 @@ struct YearDetailView: View {
         .sheet(isPresented: $showingAddSheet) {
             AddItemView(
                 viewModel: viewModel,
-                type: selectedTab == 1 ? .asset : .liability,
+                type: section == .assets ? .asset : .liability,
                 year: year
             )
         }
@@ -469,6 +493,7 @@ struct YearSummaryView: View {
                                     .foregroundStyle(.white)
                             }
                         }
+                        .privateChartAxis()
                     }
                     .padding()
                     .background(Theme.subtleBackground)
@@ -502,6 +527,7 @@ struct SummaryCard: View {
                 .font(isLarge ? .title : .subheadline)
                 .bold()
                 .foregroundStyle(amountColor)
+                .privacySensitive()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -557,6 +583,7 @@ struct MonthlyBreakdownView: View {
                                     Text(latest.assets, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
                                         .bold()
                                         .foregroundStyle(Theme.positiveAmount)
+                                        .privacySensitive()
                                 }
 
                                 Spacer()
@@ -568,6 +595,7 @@ struct MonthlyBreakdownView: View {
                                     Text(latest.liabilities, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
                                         .bold()
                                         .foregroundStyle(Theme.negativeAmount)
+                                        .privacySensitive()
                                 }
                             }
 
@@ -581,6 +609,7 @@ struct MonthlyBreakdownView: View {
                                 Text(latest.netWorth, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
                                     .bold()
                                     .foregroundStyle(latest.netWorth >= 0 ? Theme.positiveAmount : Theme.negativeAmount)
+                                    .privacySensitive()
                             }
                         }
                         .padding()
@@ -623,6 +652,7 @@ struct MonthlyBreakdownView: View {
                                             .foregroundStyle(.white)
                                     }
                                 }
+                                .privateChartAxis()
                             }
                         }
                         .padding()
@@ -654,6 +684,7 @@ struct MonthlyBreakdownView: View {
                                             .font(.subheadline)
                                             .bold()
                                             .foregroundStyle(item.netWorth >= 0 ? Theme.positiveAmount : Theme.negativeAmount)
+                                            .privacySensitive()
                                     } else {
                                         Text("No data")
                                             .font(.caption)
@@ -666,12 +697,14 @@ struct MonthlyBreakdownView: View {
                                         Text("A: \(item.assets, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))")
                                             .font(.caption)
                                             .foregroundStyle(Theme.positiveAmount)
+                                            .privacySensitive()
 
                                         Spacer()
 
                                         Text("L: \(item.liabilities, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))")
                                             .font(.caption)
                                             .foregroundStyle(Theme.negativeAmount)
+                                            .privacySensitive()
                                     }
                                 }
                             }

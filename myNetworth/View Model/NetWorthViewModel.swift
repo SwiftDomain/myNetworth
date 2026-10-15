@@ -290,6 +290,8 @@ class NetWorthViewModel {
                     category: item.category,
                     itemType: item.itemType
                 )
+                // The amount was last checked when the original was, not today.
+                copy.updatedAt = item.updatedAt
                 modelContext.insert(copy)
             }
         }
@@ -322,12 +324,14 @@ class NetWorthViewModel {
         didMutate()
     }
 
-    /// Saves the amounts confirmed in Update Balances in one go.
+    /// Saves the amounts confirmed in Update Balances in one go. An amount confirmed as the
+    /// same still counts as checked today, so Home stops suggesting an update.
     func updateAmounts(_ newAmounts: [UUID: Int], of items: [FinancialItem]) {
+        let now = Date.now
         for item in items {
-            guard let amount = newAmounts[item.id], amount != item.amount else { continue }
+            guard let amount = newAmounts[item.id] else { continue }
             item.amount = amount
-            item.updatedAt = .now
+            item.updatedAt = now
         }
         didMutate()
     }
@@ -535,6 +539,49 @@ class NetWorthViewModel {
                     year: item.year
                 )
             }
+    }
+
+    // MARK: - Home
+
+    /// Balances not checked for this long get an "Update balances" suggestion on Home.
+    static let balanceCheckInterval: TimeInterval = 30 * 24 * 60 * 60
+
+    /// The latest net worth, its change since the previous year with data, and the trend.
+    var netWorthSummary: NetWorthSummary? {
+        guard let year = latestYearWithData else { return nil }
+        return NetWorthSummary(
+            year: year,
+            netWorth: getYearData(for: year).netWorth,
+            change: InsightsEngine.yearChange(for: year, items: insightItems),
+            trend: yearsWithData.filter { $0 <= year }.sorted().map { getYearData(for: $0) },
+            lastUpdated: latestEntries(in: year).map(\.updatedAt).max()
+        )
+    }
+
+    /// The most useful thing to do next, or nil when everything is up to date. `strategy` is
+    /// the debt planner's, so the suggested debt matches the plan.
+    func nextStep(strategy: PayoffStrategy, now: Date = .now) -> NextStep? {
+        let thisYear = Calendar.current.component(.year, from: now)
+        guard !years.isEmpty else { return .addFirstYear }
+        guard years.contains(thisYear) else {
+            return .startYear(thisYear, from: carryForwardSource(for: thisYear))
+        }
+        if latestEntries(in: thisYear).isEmpty {
+            return .addAccounts(year: thisYear)
+        }
+        // The oldest balance Update Balances can refresh, so one forgotten account still counts.
+        if let oldest = yearlyItems(in: thisYear).map(\.updatedAt).min(),
+           now.timeIntervalSince(oldest) > Self.balanceCheckInterval {
+            return .updateBalances(year: thisYear, lastUpdated: oldest)
+        }
+        if goals.isEmpty {
+            return .setFirstGoal
+        }
+        let debts = plannerDebts
+        if let first = DebtPlanner.payoffOrder(of: debts, strategy: strategy).first {
+            return .payOffNext(debtName: debts[first].name)
+        }
+        return nil
     }
 
     // MARK: - Export
