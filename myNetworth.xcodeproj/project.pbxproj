@@ -38,6 +38,9 @@
 		3EAA00312F00000E001016E5 /* FinancialItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E3EDAB22EE39E1D001016E5 /* FinancialItem.swift */; };
 		3EAA00322F00000E001016E5 /* SharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA000C2F000007001016E5 /* SharedStore.swift */; };
 		3EAA00342F00000E001016E5 /* NetWorthWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3EAA00332F00000E001016E5 /* NetWorthWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		3EAA00412F00000F001016E5 /* Reminders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00402F00000F001016E5 /* Reminders.swift */; };
+		3EAA00432F00000F001016E5 /* QuickStart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00422F00000F001016E5 /* QuickStart.swift */; };
+		3EAA00452F00000F001016E5 /* QuickStartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00442F00000F001016E5 /* QuickStartView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -106,6 +109,9 @@
 		3EAA002F2F00000E001016E5 /* NetWorthWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NetWorthWidget.entitlements; sourceTree = "<group>"; };
 		3EAA00302F00000E001016E5 /* myNetworth.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = myNetworth.entitlements; sourceTree = "<group>"; };
 		3EAA00332F00000E001016E5 /* NetWorthWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NetWorthWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		3EAA00402F00000F001016E5 /* Reminders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reminders.swift; sourceTree = "<group>"; };
+		3EAA00422F00000F001016E5 /* QuickStart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickStart.swift; sourceTree = "<group>"; };
+		3EAA00442F00000F001016E5 /* QuickStartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickStartView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -192,6 +198,7 @@
 				3EAA00232F00000D001016E5 /* MainTabView.swift */,
 				3EAA00252F00000D001016E5 /* HomeTab.swift */,
 				3EAA00272F00000D001016E5 /* AccountsTab.swift */,
+				3EAA00442F00000F001016E5 /* QuickStartView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -208,6 +215,8 @@
 				3EAA000C2F000007001016E5 /* SharedStore.swift */,
 				3EAA00212F00000D001016E5 /* Dashboard.swift */,
 				3EAA00292F00000E001016E5 /* WidgetSnapshot.swift */,
+				3EAA00402F00000F001016E5 /* Reminders.swift */,
+				3EAA00422F00000F001016E5 /* QuickStart.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -394,6 +403,9 @@
 				3EAA00262F00000D001016E5 /* HomeTab.swift in Sources */,
 				3EAA00282F00000D001016E5 /* AccountsTab.swift in Sources */,
 				3EAA002A2F00000E001016E5 /* WidgetSnapshot.swift in Sources */,
+				3EAA00412F00000F001016E5 /* Reminders.swift in Sources */,
+				3EAA00432F00000F001016E5 /* QuickStart.swift in Sources */,
+				3EAA00452F00000F001016E5 /* QuickStartView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

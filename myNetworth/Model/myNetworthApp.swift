@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import UserNotifications
 
 @main
 struct myNetworthApp: App {
@@ -14,6 +15,9 @@ struct myNetworthApp: App {
     private let modelContainer: ModelContainer
 
     init() {
+        // Set before launch finishes, so tapping the monthly reminder to open the app is handled.
+        UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
+
         let schema = SharedStore.schema
 
         let configuration: ModelConfiguration

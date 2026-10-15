@@ -51,7 +51,9 @@ enum AppTab: Hashable {
 struct MainTabView: View {
     var viewModel: NetWorthViewModel
     @AppStorage(PrivacySettings.hideAmountsKey) private var hideAmounts = false
+    @AppStorage(QuickStartView.seenKey) private var hasSeenQuickStart = false
     @State private var selectedTab = AppTab.home
+    @State private var showingQuickStart = false
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -73,6 +75,18 @@ struct MainTabView: View {
         }
         // Amounts marked `.privacySensitive()` are masked while this is on.
         .redacted(reason: hideAmounts ? .privacy : [])
+        .onChange(of: AppRouter.shared.checkInRequests) {
+            selectedTab = .home
+        }
+        .onAppear {
+            // New users start with setup rather than an empty app, once.
+            if viewModel.years.isEmpty && !hasSeenQuickStart {
+                showingQuickStart = true
+            }
+        }
+        .fullScreenCover(isPresented: $showingQuickStart) {
+            QuickStartView(viewModel: viewModel)
+        }
     }
 }
 
