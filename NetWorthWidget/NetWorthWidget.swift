@@ -17,6 +17,8 @@ struct NetWorthEntry: TimelineEntry {
     /// Nil until the app has numbers to show.
     let snapshot: WidgetSnapshot?
     let currencyCode: String
+    /// The app's Hide Amounts setting: amounts are masked while it's on.
+    var hidesAmounts = false
 }
 
 // MARK: - Timeline Provider
@@ -60,7 +62,8 @@ struct NetWorthProvider: TimelineProvider {
         return NetWorthEntry(
             date: .now,
             snapshot: WidgetSnapshot.make(from: items),
-            currencyCode: currencyCode
+            currencyCode: currencyCode,
+            hidesAmounts: SharedStore.defaults.bool(forKey: SharedStore.hideAmountsKey)
         )
     }
 }
@@ -89,6 +92,13 @@ struct NetWorthWidgetEntryView: View {
     let entry: NetWorthEntry
 
     var body: some View {
+        content
+            // Amounts are privacy-sensitive, so they're masked while Hide Amounts is on.
+            .redacted(reason: entry.hidesAmounts ? .privacy : [])
+    }
+
+    @ViewBuilder
+    private var content: some View {
         switch family {
         case .accessoryInline:
             InlineNetWorthView(snapshot: entry.snapshot, currencyCode: entry.currencyCode)
@@ -475,6 +485,13 @@ struct NetWorthTrendEntryView: View {
     let entry: NetWorthEntry
 
     var body: some View {
+        content
+            // Amounts are privacy-sensitive, so they're masked while Hide Amounts is on.
+            .redacted(reason: entry.hidesAmounts ? .privacy : [])
+    }
+
+    @ViewBuilder
+    private var content: some View {
         switch family {
         case .accessoryRectangular:
             RectangularTrendView(snapshot: entry.snapshot, currencyCode: entry.currencyCode)

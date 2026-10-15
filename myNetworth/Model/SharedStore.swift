@@ -87,6 +87,25 @@ enum SharedStore {
         }
     }
 
+    // MARK: Shared Settings
+
+    /// Settings the widget needs too, kept in the App Group's defaults.
+    static let defaults = UserDefaults(suiteName: appGroupID) ?? .standard
+
+    /// Whether Hide Amounts is on. The widgets mask amounts while it is.
+    static let hideAmountsKey = "privacy.hideAmounts"
+
+    /// Hide Amounts used to be kept in the app's own defaults, which the widget can't read.
+    /// Copies it across once.
+    static func moveSettingsToSharedDefaults() {
+        let standard = UserDefaults.standard
+        guard defaults !== standard,
+              standard.object(forKey: hideAmountsKey) != nil,
+              defaults.object(forKey: hideAmountsKey) == nil else { return }
+        defaults.set(standard.bool(forKey: hideAmountsKey), forKey: hideAmountsKey)
+        standard.removeObject(forKey: hideAmountsKey)
+    }
+
     /// "…/default.store" plus "-wal" gives "…/default.store-wal".
     private static func sibling(of storeURL: URL, suffix: String) -> URL {
         storeURL.deletingLastPathComponent().appending(path: storeURL.lastPathComponent + suffix)
