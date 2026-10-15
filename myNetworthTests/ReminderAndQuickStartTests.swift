@@ -40,10 +40,12 @@ struct ReminderTests {
     @Test("The notification never shows amounts")
     func contentHasNoAmounts() {
         let content = BalanceReminder.content()
+        let titleHasDigits = content.title.contains { $0.isNumber }
+        let bodyHasDigits = content.body.contains { $0.isNumber }
 
         #expect(content.title == "Time to update your balances")
-        #expect(!content.title.contains(where: \.isNumber))
-        #expect(!content.body.contains(where: \.isNumber))
+        #expect(!titleHasDigits)
+        #expect(!bodyHasDigits)
     }
 
     @Test("A tap is counted and waits until Home opens the check-in")
