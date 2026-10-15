@@ -152,4 +152,18 @@ struct WidgetTests {
         #expect(widgetIdentifier.hasPrefix(mainIdentifier + "."))
         #expect(extensionInfo?["NSExtensionPointIdentifier"] as? String == "com.apple.widgetkit-extension")
     }
+
+    @Test("The widget has the same version and build as the app, as the App Store requires")
+    func widgetVersionMatchesApp() throws {
+        let plugIns = try #require(Bundle.main.builtInPlugInsURL)
+        let widget = try #require(Bundle(url: plugIns.appending(path: "NetWorthWidgetExtension.appex")))
+        let appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+        let appBuild = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+        let widgetVersion = widget.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+        let widgetBuild = widget.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+
+        #expect(appVersion != nil)
+        #expect(widgetVersion == appVersion)
+        #expect(widgetBuild == appBuild)
+    }
 }
