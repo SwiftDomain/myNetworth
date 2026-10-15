@@ -20,6 +20,7 @@ class NetWorthViewModel {
     private(set) var refreshToken: Int = 0
 
     private func didMutate() {
+        updateAchievedGoals()
         refreshToken += 1
         WidgetCenter.shared.reloadAllTimelines()
     }
@@ -28,6 +29,7 @@ class NetWorthViewModel {
         self.modelContext = modelContext
         MigrationManager.migrateIfNeeded(modelContext: modelContext)
         backfillDebtGoalStarts()
+        updateAchievedGoals()
     }
 
     // MARK: - Fetched Data
@@ -394,8 +396,63 @@ class NetWorthViewModel {
         if goal.goalType == "liability" {
             goal.startAmount = debtWhenSet(goal)
         }
+        // A goal that's already met when it's set is marked reached, without a celebration.
+        if goalProgress(for: goal) >= 1 {
+            goal.isAchieved = true
+            goal.achievedDate = .now
+            goal.isCelebrated = true
+        }
         modelContext.insert(goal)
         didMutate()
+    }
+
+    /// Marks goals reached once their progress hits 100%. A reached goal stays reached even
+    /// if the numbers drop later.
+    private func updateAchievedGoals() {
+        for goal in goals where !goal.isAchieved && goalProgress(for: goal) >= 1 {
+            goal.isAchieved = true
+            goal.achievedDate = .now
+        }
+    }
+
+    /// A goal that was reached and hasn't had its celebration yet.
+    var goalToCelebrate: Goal? {
+        goals.first { $0.isAchieved && !$0.isCelebrated }
+    }
+
+    func markCelebrated(_ goal: Goal) {
+        goal.isCelebrated = true
+    }
+
+    /// How a goal is pacing toward its target date, judged from the last few years with
+    /// data. Nil when there's no data yet.
+    func goalPace(for goal: Goal, now: Date = .now) -> GoalPace? {
+        if goal.isAchieved { return .reached }
+        guard let year = latestYearWithData else { return nil }
+
+        let target = goal.goalType == "liability" ? -goal.targetAmount : goal.targetAmount
+        let history = yearsWithData
+            .filter { $0 <= year }
+            .sorted()
+            .map { (year: $0, value: goalMeasure(goal, in: $0)) }
+
+        return GoalCoach.pace(
+            remaining: target - goalMeasure(goal, in: year),
+            monthsLeft: GoalCoach.monthsLeft(from: now, to: goal.targetDate),
+            pacePerMonth: GoalCoach.pacePerMonth(values: history),
+            now: now
+        )
+    }
+
+    /// What a goal measures in `year`, oriented so that higher is better: net worth, total
+    /// assets, or total debt as a negative number.
+    private func goalMeasure(_ goal: Goal, in year: Int) -> Int {
+        let data = getYearData(for: year)
+        switch goal.goalType {
+        case "liability": return -data.liabilities
+        case "asset": return data.assets
+        default: return data.netWorth
+        }
     }
 
     func deleteGoal(_ goal: Goal) {
@@ -614,6 +671,15 @@ class NetWorthViewModel {
             ))
         }
         didMutate()
+    }
+
+    // MARK: - Future You
+
+    /// Net worth projected 5, 10 and 20 years past the latest year with data, at the average
+    /// yearly change so far. Nil with fewer than two years of data.
+    var netWorthProjection: NetWorthProjection? {
+        let thisYear = Calendar.current.component(.year, from: .now)
+        return InsightsEngine.overall(items: insightItems, throughYear: thisYear).map { NetWorthProjection($0) }
     }
 
     // MARK: - Export

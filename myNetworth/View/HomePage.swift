@@ -158,6 +158,8 @@ struct GoalPreviewCard: View {
                 Text("\(Int(progress * 100))% complete")
                     .font(.caption)
                     .foregroundStyle(Theme.textSecondary)
+
+                GoalPaceLabel(viewModel: viewModel, goal: goal)
             }
             .padding()
             .background(Theme.cardBackground)

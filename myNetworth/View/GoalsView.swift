@@ -110,6 +110,8 @@ struct GoalCard: View {
             Text("\(Int(progress * 100))% complete")
                 .font(.caption)
                 .foregroundStyle(Theme.textSecondary)
+
+            GoalPaceLabel(viewModel: viewModel, goal: goal)
         }
         .padding()
         .background(Theme.cardBackground)
@@ -184,5 +186,149 @@ struct AddGoalView: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Goal Pace Label
+
+/// One line on how a goal is pacing: reached, on track, or what it takes to make the date.
+struct GoalPaceLabel: View {
+    var viewModel: NetWorthViewModel
+    let goal: Goal
+
+    private var currency: IntegerFormatStyle<Int>.Currency {
+        .currency(code: viewModel.currencyCode).precision(.fractionLength(0))
+    }
+
+    private var isDebtGoal: Bool { goal.goalType == "liability" }
+
+    var body: some View {
+        if let pace = viewModel.goalPace(for: goal) {
+            Label {
+                text(for: pace)
+            } icon: {
+                Image(systemName: icon(for: pace))
+            }
+            .font(.caption)
+            .foregroundStyle(color(for: pace))
+        }
+    }
+
+    @ViewBuilder
+    private func text(for pace: GoalPace) -> some View {
+        let monthYear = Date.FormatStyle.dateTime.month(.abbreviated).year()
+        switch pace {
+        case .reached:
+            if let achievedDate = goal.achievedDate {
+                Text("Reached \(achievedDate, format: monthYear)")
+            } else {
+                Text("Reached")
+            }
+        case .onTrack(let projected):
+            Text("On track · around \(projected, format: monthYear)")
+        case .behind(let perMonth):
+            Text("Behind · \(isDebtGoal ? "pay down" : "save") \(perMonth, format: currency) a month to make \(goal.targetDate, format: monthYear)")
+                .privacySensitive()
+        case .needs(let perMonth):
+            Text("\(isDebtGoal ? "Pay down" : "Save") \(perMonth, format: currency) a month to reach it by \(goal.targetDate, format: monthYear)")
+                .privacySensitive()
+        case .overdue(let remaining):
+            Text("Target date passed · \(remaining, format: currency) to go")
+                .privacySensitive()
+        }
+    }
+
+    private func icon(for pace: GoalPace) -> String {
+        switch pace {
+        case .reached: "checkmark.seal.fill"
+        case .onTrack: "checkmark.circle"
+        case .behind: "exclamationmark.triangle"
+        case .needs: "calendar"
+        case .overdue: "clock.badge.exclamationmark"
+        }
+    }
+
+    private func color(for pace: GoalPace) -> Color {
+        switch pace {
+        case .reached, .onTrack: Theme.positiveAmount
+        case .behind, .overdue: .orange
+        case .needs: Theme.textSecondary
+        }
+    }
+}
+
+// MARK: - Goal Celebration
+
+/// Shown once when a goal is reached.
+struct GoalCelebrationView: View {
+    let goal: Goal
+    let currencyCode: String
+    let onDismiss: () -> Void
+    @State private var isShowing = false
+
+    private var currency: IntegerFormatStyle<Int>.Currency {
+        .currency(code: currencyCode).precision(.fractionLength(0))
+    }
+
+    private var detail: Text {
+        switch goal.goalType {
+        case "liability":
+            goal.targetAmount == 0
+                ? Text("You're debt-free.")
+                : Text("Your debt is down to \(goal.targetAmount, format: currency).")
+        case "asset":
+            Text("Your assets reached \(goal.targetAmount, format: currency).")
+        default:
+            Text("Your net worth reached \(goal.targetAmount, format: currency).")
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.6)
+                .ignoresSafeArea()
+                .onTapGesture(perform: onDismiss)
+
+            VStack(spacing: 14) {
+                Image(systemName: "party.popper.fill")
+                    .font(.system(size: 64))
+                    .foregroundStyle(.yellow)
+                    .symbolEffect(.bounce, value: isShowing)
+
+                Text("Goal reached!")
+                    .font(.title)
+                    .bold()
+
+                Text(goal.title)
+                    .font(.title3)
+                    .multilineTextAlignment(.center)
+
+                detail
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .privacySensitive()
+
+                Button(action: onDismiss) {
+                    Text("Nice!")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .padding(.top, 6)
+            }
+            .padding(28)
+            .background(.regularMaterial, in: .rect(cornerRadius: 24))
+            .padding(32)
+            .scaleEffect(isShowing ? 1 : 0.85)
+            .opacity(isShowing ? 1 : 0)
+        }
+        .onAppear {
+            withAnimation(.spring(duration: 0.4)) {
+                isShowing = true
+            }
+        }
+        .sensoryFeedback(.success, trigger: isShowing)
+        .accessibilityAddTraits(.isModal)
     }
 }

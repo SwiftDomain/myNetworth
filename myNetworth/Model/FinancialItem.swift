@@ -91,6 +91,8 @@ class Goal {
     /// Debt goals only: total liabilities when the goal was set, which progress counts down
     /// from. `nil` until known; goals created before this existed get it filled in at launch.
     var startAmount: Int? = nil
+    /// Whether the "Goal reached" celebration has been shown for this goal.
+    var isCelebrated: Bool = false
 
     init(
         title: String,
