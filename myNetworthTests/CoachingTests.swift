@@ -108,6 +108,24 @@ struct GoalPaceTests {
         #expect(store.viewModel.goalPace(for: goal, now: now) == GoalPace.needs(perMonth: 1_000))
     }
 
+    @Test("Without a date, only when the pace gets there")
+    func noDatePace() {
+        #expect(GoalCoach.pace(remaining: 12_000, monthsLeft: nil, pacePerMonth: 1_000, now: now) == GoalPace.noDate(projected: months(12)))
+        #expect(GoalCoach.pace(remaining: 12_000, monthsLeft: nil, pacePerMonth: nil, now: now) == GoalPace.noDate(projected: nil))
+        #expect(GoalCoach.pace(remaining: 12_000, monthsLeft: nil, pacePerMonth: -200, now: now) == GoalPace.noDate(projected: nil))
+        #expect(GoalCoach.pace(remaining: 0, monthsLeft: nil, pacePerMonth: nil, now: now) == GoalPace.reached)
+    }
+
+    @Test("A goal without a date is never behind")
+    func undatedGoal() throws {
+        let store = try makeStore(assets: [thisYear - 1: 30_000, thisYear: 42_000])
+        let goal = Goal(title: "Six figures", targetAmount: 100_000, targetDate: .distantFuture)
+        goal.hasTargetDate = false
+
+        // 58,000 to go at 1,000 a month takes 58 months.
+        #expect(store.viewModel.goalPace(for: goal, now: now) == GoalPace.noDate(projected: months(58)))
+    }
+
     @Test("No pace without data, and reached goals stay reached")
     func noDataAndReached() throws {
         let store = try TestStore()
@@ -177,6 +195,70 @@ struct GoalCompletionTests {
 
         #expect(goal.isAchieved)
         #expect(relaunched.goalToCelebrate?.id == goal.id)
+    }
+}
+
+// MARK: - Milestones
+
+@MainActor
+@Suite("Milestones become goals")
+struct MilestoneMigrationTests {
+
+    @Test("Each milestone becomes a net worth goal with no date, and the milestone is removed")
+    func movesMilestones() throws {
+        let store = try TestStore()
+        store.viewModel.addYear(thisYear)
+        store.addItem("Savings", 60_000, year: thisYear, category: "Cash", asset: true)
+        // Saved by an older version, which kept milestones apart from goals.
+        let created = Date(timeIntervalSince1970: 1_700_000_000)
+        let open = Milestone(title: "Six figures", targetNetWorth: 100_000)
+        open.createdAt = created
+        let passed = Milestone(title: "Fifty", targetNetWorth: 50_000)
+        let achievedDate = Date(timeIntervalSince1970: 1_710_000_000)
+        let marked = Milestone(title: "First ten", targetNetWorth: 10_000)
+        marked.isAchieved = true
+        marked.achievedDate = achievedDate
+        store.context.insert(open)
+        store.context.insert(passed)
+        store.context.insert(marked)
+        try store.context.save()
+
+        let relaunched = NetWorthViewModel(modelContext: store.context)
+
+        let leftover = try store.context.fetch(FetchDescriptor<Milestone>())
+        #expect(leftover.isEmpty)
+        let goals = relaunched.goals
+        #expect(goals.count == 3)
+
+        let sixFigures = try #require(goals.first { $0.title == "Six figures" })
+        #expect(sixFigures.targetAmount == 100_000)
+        #expect(sixFigures.goalType == "netWorth")
+        #expect(!sixFigures.hasTargetDate)
+        #expect(sixFigures.targetDate == .distantFuture)
+        #expect(sixFigures.createdAt == created)
+        #expect(!sixFigures.isAchieved)
+
+        // Already passed, so reached without a celebration.
+        let fifty = try #require(goals.first { $0.title == "Fifty" })
+        #expect(fifty.isAchieved)
+        #expect(fifty.isCelebrated)
+
+        let firstTen = try #require(goals.first { $0.title == "First ten" })
+        #expect(firstTen.isAchieved)
+        #expect(firstTen.achievedDate == achievedDate)
+
+        #expect(relaunched.goalToCelebrate?.id == nil)
+    }
+
+    @Test("Nothing changes when there are no milestones")
+    func noMilestones() throws {
+        let store = try TestStore()
+        store.viewModel.addGoal(Goal(title: "Savings", targetAmount: 10_000, targetDate: .now.addingTimeInterval(365 * 24 * 60 * 60)))
+
+        let relaunched = NetWorthViewModel(modelContext: store.context)
+
+        #expect(relaunched.goals.count == 1)
+        #expect(relaunched.goals.first?.hasTargetDate == true)
     }
 }
 

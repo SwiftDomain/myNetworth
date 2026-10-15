@@ -92,10 +92,6 @@ struct SettingsView: View {
                     NavigationLink("Custom Categories") {
                         ManageCategoriesView(viewModel: viewModel)
                     }
-
-                    NavigationLink("Milestones") {
-                        MilestonesListView(viewModel: viewModel)
-                    }
                 }
 
                 Section("Export") {
@@ -294,93 +290,6 @@ struct AddCustomCategoryView: View {
                         dismiss()
                     }
                     .disabled(name.isEmpty)
-                }
-            }
-        }
-    }
-}
-
-// MARK: - Milestones List
-
-struct MilestonesListView: View {
-    var viewModel: NetWorthViewModel
-    @State private var showingAddSheet = false
-
-    var body: some View {
-        List {
-            ForEach(viewModel.milestones) { milestone in
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(milestone.title)
-                            .font(.headline)
-                        Text(milestone.targetNetWorth, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .privacySensitive()
-                    }
-
-                    Spacer()
-
-                    if milestone.isAchieved {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                    }
-                }
-            }
-            .onDelete { indexSet in
-                for index in indexSet {
-                    viewModel.deleteMilestone(viewModel.milestones[index])
-                }
-            }
-        }
-        .navigationTitle("Milestones")
-        .toolbar {
-            Button("Add", systemImage: "plus") {
-                showingAddSheet = true
-            }
-        }
-        .sheet(isPresented: $showingAddSheet) {
-            AddMilestoneView(viewModel: viewModel)
-        }
-        .overlay {
-            if viewModel.milestones.isEmpty {
-                ContentUnavailableView(
-                    "No Milestones",
-                    systemImage: "flag",
-                    description: Text("Set net worth milestones to celebrate your progress")
-                )
-            }
-        }
-    }
-}
-
-// MARK: - Add Milestone
-
-struct AddMilestoneView: View {
-    var viewModel: NetWorthViewModel
-    @Environment(\.dismiss) private var dismiss
-
-    @State private var title = ""
-    @State private var targetAmount = 0
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                TextField("Title (e.g. 'First $100K')", text: $title)
-                TextField("Target Net Worth", value: $targetAmount, format: .number)
-                    .keyboardType(.numberPad)
-            }
-            .navigationTitle("New Milestone")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        viewModel.addMilestone(Milestone(title: title, targetNetWorth: targetAmount))
-                        dismiss()
-                    }
-                    .disabled(title.isEmpty || targetAmount == 0)
                 }
             }
         }

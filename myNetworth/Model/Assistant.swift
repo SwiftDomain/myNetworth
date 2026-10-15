@@ -135,6 +135,10 @@ extension NetWorthViewModel {
             return "\(verb) \(money(perMonth)) a month to reach it by \(goal.targetDate.formatted(monthYear))"
         case .overdue(let remaining):
             return "past its date with \(money(remaining)) to go"
+        case .noDate(let projected?):
+            return "no target date; at your pace you'd reach it around \(projected.formatted(monthYear))"
+        case .noDate(nil):
+            return "no target date"
         case nil:
             return "add your numbers to see its progress"
         }

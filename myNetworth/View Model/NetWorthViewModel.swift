@@ -28,6 +28,7 @@ class NetWorthViewModel {
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
         MigrationManager.migrateIfNeeded(modelContext: modelContext)
+        moveMilestonesToGoals()
         backfillDebtGoalStarts()
         updateAchievedGoals()
     }
@@ -438,7 +439,7 @@ class NetWorthViewModel {
 
         return GoalCoach.pace(
             remaining: target - goalMeasure(goal, in: year),
-            monthsLeft: GoalCoach.monthsLeft(from: now, to: goal.targetDate),
+            monthsLeft: goal.hasTargetDate ? GoalCoach.monthsLeft(from: now, to: goal.targetDate) : nil,
             pacePerMonth: GoalCoach.pacePerMonth(values: history),
             now: now
         )
@@ -508,43 +509,33 @@ class NetWorthViewModel {
         return getYearData(for: year).liabilities
     }
 
+    /// Milestones were net worth targets without a date. They're goals now: each becomes a
+    /// net worth goal with no target date and the milestone is removed. Ones already passed
+    /// are marked reached without a celebration.
+    private func moveMilestonesToGoals() {
+        guard let milestones = try? modelContext.fetch(FetchDescriptor<Milestone>()), !milestones.isEmpty else {
+            return
+        }
+        for milestone in milestones {
+            let goal = Goal(title: milestone.title, targetAmount: milestone.targetNetWorth, targetDate: .distantFuture)
+            goal.hasTargetDate = false
+            goal.createdAt = milestone.createdAt
+            if milestone.isAchieved || goalProgress(for: goal) >= 1 {
+                goal.isAchieved = true
+                goal.achievedDate = milestone.achievedDate ?? .now
+                goal.isCelebrated = true
+            }
+            modelContext.insert(goal)
+            modelContext.delete(milestone)
+        }
+        try? modelContext.save()
+    }
+
     /// Debt goals made before `startAmount` existed get it filled in once from the data, so
     /// their starting point stays fixed when that year's numbers are edited later.
     private func backfillDebtGoalStarts() {
         for goal in goals where goal.goalType == "liability" && goal.startAmount == nil {
             goal.startAmount = debtWhenSet(goal)
-        }
-    }
-
-    // MARK: - Milestones
-
-    var milestones: [Milestone] {
-        _ = refreshToken
-        let descriptor = FetchDescriptor<Milestone>(
-            sortBy: [SortDescriptor(\.targetNetWorth)]
-        )
-        return (try? modelContext.fetch(descriptor)) ?? []
-    }
-
-    func addMilestone(_ milestone: Milestone) {
-        modelContext.insert(milestone)
-        didMutate()
-    }
-
-    func deleteMilestone(_ milestone: Milestone) {
-        modelContext.delete(milestone)
-        didMutate()
-    }
-
-    func checkMilestones() {
-        let currentYear = Calendar.current.component(.year, from: .now)
-        let data = getYearData(for: currentYear)
-        let unachieved = milestones.filter { !$0.isAchieved }
-        for milestone in unachieved {
-            if data.netWorth >= milestone.targetNetWorth {
-                milestone.isAchieved = true
-                milestone.achievedDate = .now
-            }
         }
     }
 

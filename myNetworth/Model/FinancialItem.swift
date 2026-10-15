@@ -93,6 +93,9 @@ class Goal {
     var startAmount: Int? = nil
     /// Whether the "Goal reached" celebration has been shown for this goal.
     var isCelebrated: Bool = false
+    /// False for a goal with no deadline. Its `targetDate` is then `.distantFuture`, so it
+    /// sorts after dated goals.
+    var hasTargetDate: Bool = true
 
     init(
         title: String,
@@ -143,6 +146,8 @@ class RecurringItem {
 
 // MARK: - Milestone Model
 
+/// No longer used: milestones became goals with no target date, and the app moves any it
+/// finds at launch. The model stays in the schema so existing stores keep opening.
 @Model
 class Milestone {
     var id: UUID = UUID()
