@@ -21,26 +21,35 @@ struct myNetworthApp: App {
 
         let schema = SharedStore.schema
 
-        let configuration: ModelConfiguration
+        // Shared with the widget. Existing data is copied in the first time; if that copy
+        // fails, keep using the data where it is and retry on the next launch.
+        let storeURL: URL?
         if let groupStoreURL = SharedStore.groupStoreURL {
-            // Shared with the widget. Existing data is copied in the first time; if that
-            // copy fails, keep using the data where it is and retry on the next launch.
-            let storeURL = SharedStore.copyLegacyStoreIfNeeded(to: groupStoreURL)
+            storeURL = SharedStore.copyLegacyStoreIfNeeded(to: groupStoreURL)
                 ? groupStoreURL
                 : SharedStore.legacyStoreURL
-            configuration = ModelConfiguration(
-                schema: schema,
-                url: storeURL,
-                cloudKitDatabase: .automatic
-            )
         } else {
-            configuration = ModelConfiguration(schema: schema)
+            storeURL = nil
+        }
+
+        func configuration(syncing cloudKitDatabase: ModelConfiguration.CloudKitDatabase) -> ModelConfiguration {
+            if let storeURL {
+                return ModelConfiguration(schema: schema, url: storeURL, cloudKitDatabase: cloudKitDatabase)
+            }
+            return ModelConfiguration(schema: schema, cloudKitDatabase: cloudKitDatabase)
         }
 
         do {
-            modelContainer = try ModelContainer(for: schema, configurations: [configuration])
+            // Syncs through the iCloud container in the app's entitlements, whenever the
+            // user is signed in to iCloud.
+            modelContainer = try ModelContainer(for: schema, configurations: [configuration(syncing: .automatic)])
         } catch {
-            fatalError("Failed to create model container: \(error)")
+            // If iCloud can't be set up, keep working with the data on this device.
+            do {
+                modelContainer = try ModelContainer(for: schema, configurations: [configuration(syncing: .none)])
+            } catch {
+                fatalError("Failed to create model container: \(error)")
+            }
         }
     }
 

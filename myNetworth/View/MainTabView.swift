@@ -91,6 +91,12 @@ struct MainTabView: View {
                 showingQuickStart = true
             }
         }
+        .onChange(of: viewModel.years.isEmpty) { _, isEmpty in
+            // On a new device, the data from iCloud can arrive while setup is open.
+            if !isEmpty {
+                showingQuickStart = false
+            }
+        }
         .fullScreenCover(isPresented: $showingQuickStart) {
             QuickStartView(viewModel: viewModel)
         }

@@ -125,6 +125,7 @@
 		3EAA004C2F000012001016E5 /* GoalCoach.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalCoach.swift; sourceTree = "<group>"; };
 		3EAA004F2F000012001016E5 /* CSVImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVImport.swift; sourceTree = "<group>"; };
 		3EAA00512F000012001016E5 /* CSVImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVImportView.swift; sourceTree = "<group>"; };
+		3EAA00532F000013001016E5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -185,6 +186,7 @@
 			children = (
 				3EAA00302F00000E001016E5 /* myNetworth.entitlements */,
 				3E8D7E1E2F5B87DC00C7215D /* myNetworthRelease.entitlements */,
+				3EAA00532F000013001016E5 /* Info.plist */,
 				3E3EDAB12EE39DAB001016E5 /* Model */,
 				3E3EDAB02EE39DA1001016E5 /* View */,
 				3E3EDAB42EE39E4E001016E5 /* View Model */,
@@ -604,6 +606,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = myNetworth/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Face ID keeps your net worth data private.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -653,6 +656,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = myNetworth/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Face ID keeps your net worth data private.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;

@@ -29,8 +29,52 @@ class NetWorthViewModel {
         self.modelContext = modelContext
         MigrationManager.migrateIfNeeded(modelContext: modelContext)
         moveMilestonesToGoals()
+        removeSyncDuplicates()
         backfillDebtGoalStarts()
         updateAchievedGoals()
+    }
+
+    // MARK: - iCloud Sync
+
+    /// Picks up changes that arrived from iCloud: the screens read the store when they
+    /// redraw, so this redraws them, and the widgets too.
+    func refreshFromStore() {
+        removeSyncDuplicates()
+        didMutate()
+    }
+
+    /// With iCloud sync, two devices can each create a record the other already has: the
+    /// settings a new device makes before its first sync arrives, or the same year added on
+    /// both. Keeps the oldest of each and removes the rest, so every device keeps the same one.
+    private func removeSyncDuplicates() {
+        removeDuplicates(of: TrackedYear.self, key: { String($0.year) }, createdAt: { $0.createdAt })
+        removeDuplicates(of: UserSettings.self, key: { _ in "settings" }, createdAt: { $0.createdAt })
+        removeDuplicates(
+            of: CustomCategory.self,
+            key: { "\($0.itemType)|\($0.name.lowercased())" },
+            createdAt: { $0.createdAt }
+        )
+        removeDuplicates(of: DebtTerms.self, key: { "\($0.name)|\($0.category)" }, createdAt: { $0.createdAt })
+    }
+
+    private func removeDuplicates<Model: PersistentModel>(
+        of type: Model.Type,
+        key: (Model) -> String,
+        createdAt: (Model) -> Date
+    ) {
+        guard let records = try? modelContext.fetch(FetchDescriptor<Model>()) else { return }
+        var removedAny = false
+        for group in Dictionary(grouping: records, by: key).values where group.count > 1 {
+            let newestFirst = group.sorted { createdAt($0) > createdAt($1) }
+            for duplicate in newestFirst.dropLast() {
+                modelContext.delete(duplicate)
+                removedAny = true
+            }
+        }
+        if removedAny {
+            // Saved straight away, so the removal syncs to the other devices too.
+            try? modelContext.save()
+        }
     }
 
     // MARK: - Fetched Data
@@ -58,7 +102,9 @@ class NetWorthViewModel {
         let descriptor = FetchDescriptor<TrackedYear>(
             sortBy: [SortDescriptor(\.year, order: .reverse)]
         )
-        return ((try? modelContext.fetch(descriptor)) ?? []).map(\.year)
+        // A year added on two devices is listed once, even before the duplicate is removed.
+        var seen = Set<Int>()
+        return ((try? modelContext.fetch(descriptor)) ?? []).map(\.year).filter { seen.insert($0).inserted }
     }
 
     /// The year the debt planner reads debts from: the latest year, not in the future, that
@@ -144,7 +190,8 @@ class NetWorthViewModel {
     // MARK: - Settings
 
     var settings: UserSettings {
-        let descriptor = FetchDescriptor<UserSettings>()
+        // The oldest, so every device uses the same one if iCloud brings in another.
+        let descriptor = FetchDescriptor<UserSettings>(sortBy: [SortDescriptor(\.createdAt)])
         if let existing = (try? modelContext.fetch(descriptor))?.first {
             return existing
         }

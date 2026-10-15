@@ -105,7 +105,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Data Management")
                 } footer: {
-                    Text("Import a CSV file with Name and Amount columns, plus Year, Category, Type and Month if it has them, like the files Export makes.")
+                    Text("When you're signed in to iCloud, your data syncs to your other devices with the same Apple Account. Import a CSV file with Name and Amount columns, plus Year, Category, Type and Month if it has them, like the files Export makes.")
                 }
 
                 Section("Export") {
