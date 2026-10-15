@@ -111,6 +111,36 @@ struct WidgetTests {
         #expect(snapshot.percentageChange == nil)
     }
 
+    @Test("Hide Amounts moves to the shared settings the widget reads, once")
+    func hideAmountsMovesToSharedDefaults() {
+        let key = SharedStore.hideAmountsKey
+        let shared = SharedStore.defaults
+        let standard = UserDefaults.standard
+        guard shared !== standard else { return }
+        let savedShared = shared.object(forKey: key)
+        let savedStandard = standard.object(forKey: key)
+        defer {
+            if let savedShared { shared.set(savedShared, forKey: key) } else { shared.removeObject(forKey: key) }
+            if let savedStandard { standard.set(savedStandard, forKey: key) } else { standard.removeObject(forKey: key) }
+        }
+        shared.removeObject(forKey: key)
+        standard.set(true, forKey: key)
+
+        SharedStore.moveSettingsToSharedDefaults()
+
+        let movedValue = shared.bool(forKey: key)
+        let leftInStandard = standard.object(forKey: key) != nil
+        #expect(movedValue)
+        #expect(!leftInStandard)
+
+        // Once it's in the shared settings, later changes there aren't overwritten.
+        shared.set(false, forKey: key)
+        standard.set(true, forKey: key)
+        SharedStore.moveSettingsToSharedDefaults()
+        let keptValue = shared.bool(forKey: key)
+        #expect(!keptValue)
+    }
+
     @Test("The widget extension is built into the app")
     func widgetIsEmbedded() throws {
         let plugIns = try #require(Bundle.main.builtInPlugInsURL)

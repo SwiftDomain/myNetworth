@@ -5,17 +5,13 @@
 
 import SwiftUI
 import Charts
+import WidgetKit
 
 // MARK: - Privacy
 
-enum PrivacySettings {
-    /// When on, every amount is masked until it's turned off again.
-    static let hideAmountsKey = "privacy.hideAmounts"
-}
-
 /// Shows or hides every amount in the app.
 struct HideAmountsButton: View {
-    @AppStorage(PrivacySettings.hideAmountsKey) private var hideAmounts = false
+    @AppStorage(SharedStore.hideAmountsKey, store: SharedStore.defaults) private var hideAmounts = false
 
     var body: some View {
         Button(
@@ -50,7 +46,7 @@ enum AppTab: Hashable {
 
 struct MainTabView: View {
     var viewModel: NetWorthViewModel
-    @AppStorage(PrivacySettings.hideAmountsKey) private var hideAmounts = false
+    @AppStorage(SharedStore.hideAmountsKey, store: SharedStore.defaults) private var hideAmounts = false
     @AppStorage(QuickStartView.seenKey) private var hasSeenQuickStart = false
     @State private var selectedTab = AppTab.home
     @State private var showingQuickStart = false
@@ -84,6 +80,10 @@ struct MainTabView: View {
         .redacted(reason: hideAmounts ? .privacy : [])
         .onChange(of: AppRouter.shared.checkInRequests) {
             selectedTab = .home
+        }
+        .onChange(of: hideAmounts) {
+            // The widgets mask amounts too, so redraw them straight away.
+            WidgetCenter.shared.reloadAllTimelines()
         }
         .onAppear {
             // New users start with setup rather than an empty app, once.
