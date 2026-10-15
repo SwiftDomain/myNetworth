@@ -11,7 +11,7 @@ import UIKit
 
 struct SettingsView: View {
     var viewModel: NetWorthViewModel
-    @AppStorage(PrivacySettings.hideAmountsKey) private var hideAmounts = false
+    @AppStorage(SharedStore.hideAmountsKey, store: SharedStore.defaults) private var hideAmounts = false
     @AppStorage(BalanceReminder.enabledKey) private var reminderEnabled = false
     @AppStorage(BalanceReminder.dayKey) private var reminderDay = BalanceReminder.defaultDay
     @AppStorage(BalanceReminder.minuteKey) private var reminderMinute = BalanceReminder.defaultMinute
@@ -56,7 +56,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Privacy")
                 } footer: {
-                    Text("Hide Amounts masks every amount until you turn it off. The eye button at the top of each tab does the same.")
+                    Text("Hide Amounts masks every amount, in the app and its widgets, until you turn it off. The eye button at the top of each tab does the same.")
                 }
 
                 Section {

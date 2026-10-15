@@ -17,6 +17,7 @@ struct myNetworthApp: App {
     init() {
         // Set before launch finishes, so tapping the monthly reminder to open the app is handled.
         UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
+        SharedStore.moveSettingsToSharedDefaults()
 
         let schema = SharedStore.schema
 
