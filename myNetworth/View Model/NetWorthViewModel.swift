@@ -584,6 +584,38 @@ class NetWorthViewModel {
         return nil
     }
 
+    /// What the monthly reminder opens: Update Balances for this year, or whatever has to
+    /// happen first when this year isn't set up yet.
+    func checkInStep(now: Date = .now) -> NextStep {
+        let thisYear = Calendar.current.component(.year, from: now)
+        guard !years.isEmpty else { return .addFirstYear }
+        guard years.contains(thisYear) else {
+            return .startYear(thisYear, from: carryForwardSource(for: thisYear))
+        }
+        guard let oldest = yearlyItems(in: thisYear).map(\.updatedAt).min() else {
+            return .addAccounts(year: thisYear)
+        }
+        return .updateBalances(year: thisYear, lastUpdated: oldest)
+    }
+
+    // MARK: - Quick Start
+
+    /// Starts tracking `year` with the accounts picked in quick-start setup. Accounts without
+    /// an amount are skipped.
+    func startTracking(year: Int, amounts: [StarterAccount: Int]) {
+        addYear(year)
+        for (account, amount) in amounts where amount > 0 {
+            modelContext.insert(FinancialItem(
+                name: account.name,
+                amount: amount,
+                year: year,
+                category: account.category,
+                itemType: account.itemType
+            ))
+        }
+        didMutate()
+    }
+
     // MARK: - Export
 
     func generateCSV(for year: Int) -> String {

@@ -19,9 +19,11 @@ private enum HomeSheet: Identifiable {
     case addYear
     case updateBalances(year: Int)
     case addGoal
+    case quickStart
 
     var id: String {
         switch self {
+        case .quickStart: "quickStart"
         case .addYear: "addYear"
         case .updateBalances(let year): "updateBalances-\(year)"
         case .addGoal: "addGoal"
@@ -97,7 +99,16 @@ struct HomeTab: View {
                     UpdateBalancesView(viewModel: viewModel, year: year)
                 case .addGoal:
                     AddGoalView(viewModel: viewModel)
+                case .quickStart:
+                    QuickStartView(viewModel: viewModel)
                 }
+            }
+            // The monthly reminder was tapped: open the check-in, or whatever comes first.
+            .onChange(of: AppRouter.shared.hasPendingCheckIn, initial: true) { _, isPending in
+                guard isPending else { return }
+                AppRouter.shared.hasPendingCheckIn = false
+                path = NavigationPath()
+                perform(viewModel.checkInStep())
             }
         }
     }
@@ -105,8 +116,7 @@ struct HomeTab: View {
     private func perform(_ step: NextStep) {
         switch step {
         case .addFirstYear:
-            newYear = Calendar.current.component(.year, from: .now)
-            sheet = .addYear
+            sheet = .quickStart
         case .startYear(let year, _):
             newYear = year
             sheet = .addYear
@@ -267,7 +277,7 @@ struct NextStepCard: View {
 
     private var title: String {
         switch step {
-        case .addFirstYear: "Add your first year"
+        case .addFirstYear: "Set up in a minute"
         case .startYear(let year, _): "Start \(String(year))"
         case .addAccounts(let year): "Add your \(String(year)) accounts"
         case .updateBalances(let year, _): "Update \(String(year)) balances"
@@ -279,7 +289,7 @@ struct NextStepCard: View {
     private var detail: Text {
         switch step {
         case .addFirstYear:
-            Text("Enter what you own and owe to see your net worth.")
+            Text("Tap the accounts you have and add rough amounts.")
         case .startYear(_, let sourceYear?):
             Text("Begin with \(String(sourceYear))'s balances and update what changed.")
         case .startYear(_, nil):

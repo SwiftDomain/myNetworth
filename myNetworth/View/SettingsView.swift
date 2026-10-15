@@ -5,12 +5,18 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 // MARK: - Settings View
 
 struct SettingsView: View {
     var viewModel: NetWorthViewModel
     @AppStorage(PrivacySettings.hideAmountsKey) private var hideAmounts = false
+    @AppStorage(BalanceReminder.enabledKey) private var reminderEnabled = false
+    @AppStorage(BalanceReminder.dayKey) private var reminderDay = BalanceReminder.defaultDay
+    @AppStorage(BalanceReminder.minuteKey) private var reminderMinute = BalanceReminder.defaultMinute
+    @State private var notificationsDenied = false
+    @Environment(\.openURL) private var openURL
     @State private var exportYear: Int
     @State private var pdfURL: URL?
 
@@ -51,6 +57,35 @@ struct SettingsView: View {
                     Text("Privacy")
                 } footer: {
                     Text("Hide Amounts masks every amount until you turn it off. The eye button at the top of each tab does the same.")
+                }
+
+                Section {
+                    Toggle("Monthly Reminder", isOn: $reminderEnabled)
+
+                    if reminderEnabled {
+                        Picker("Day", selection: $reminderDay) {
+                            ForEach(Array(BalanceReminder.days), id: \.self) { day in
+                                Text(ordinal(day)).tag(day)
+                            }
+                        }
+
+                        DatePicker("Time", selection: reminderTime, displayedComponents: .hourAndMinute)
+                    }
+                } header: {
+                    Text("Reminders")
+                } footer: {
+                    if notificationsDenied {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Notifications are turned off for myNetworth.")
+                            Button("Turn On in iOS Settings") {
+                                if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
+                                    openURL(url)
+                                }
+                            }
+                        }
+                    } else {
+                        Text("A notification on this day each month to update your balances. It never shows amounts.")
+                    }
                 }
 
                 Section("Data Management") {
@@ -98,6 +133,18 @@ struct SettingsView: View {
                     exportYear = years.first ?? 0
                 }
             }
+            .onChange(of: reminderEnabled) {
+                Task { await updateReminder() }
+            }
+            .onChange(of: reminderDay) {
+                Task { await updateReminder() }
+            }
+            .onChange(of: reminderMinute) {
+                Task { await updateReminder() }
+            }
+            .task {
+                notificationsDenied = await BalanceReminder.isDenied()
+            }
             .task(id: "\(exportYear)-\(viewModel.currencyCode)") {
                 // Render only the selected year's report, and only when the year or
                 // currency changes, instead of every year's PDF on every redraw.
@@ -106,6 +153,46 @@ struct SettingsView: View {
                     : nil
             }
         }
+    }
+
+    // MARK: Reminder
+
+    /// The reminder time as a date today, for the time picker.
+    private var reminderTime: Binding<Date> {
+        Binding {
+            Calendar.current.date(
+                bySettingHour: reminderMinute / 60,
+                minute: reminderMinute % 60,
+                second: 0,
+                of: .now
+            ) ?? .now
+        } set: { date in
+            let time = Calendar.current.dateComponents([.hour, .minute], from: date)
+            reminderMinute = (time.hour ?? 9) * 60 + (time.minute ?? 0)
+        }
+    }
+
+    /// Schedules, moves or cancels the reminder to match the settings. Turning it on asks
+    /// for permission; if that's refused the switch goes back off.
+    private func updateReminder() async {
+        guard reminderEnabled else {
+            BalanceReminder.cancel()
+            return
+        }
+        guard await BalanceReminder.requestPermission() else {
+            notificationsDenied = true
+            reminderEnabled = false
+            return
+        }
+        notificationsDenied = false
+        await BalanceReminder.schedule(day: reminderDay, minute: reminderMinute)
+    }
+
+    /// "1st", "2nd", "3rd" in the user's language.
+    private func ordinal(_ day: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .ordinal
+        return formatter.string(from: NSNumber(value: day)) ?? String(day)
     }
 }
 
