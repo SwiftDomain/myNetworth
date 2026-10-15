@@ -141,6 +141,17 @@ struct PlanTab: View {
                                 detail: Text("Net worth over time, year by year")
                             )
                         }
+
+                        NavigationLink {
+                            AskView(viewModel: viewModel)
+                        } label: {
+                            PlanRow(
+                                icon: "bubble.left.and.text.bubble.right",
+                                color: .purple,
+                                title: "Ask About Your Money",
+                                detail: Text("Questions about your numbers, answered on your iPhone")
+                            )
+                        }
                     }
                     .padding()
                 }

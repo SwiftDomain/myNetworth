@@ -12,6 +12,7 @@ import Charts
 private enum HomeDestination: Hashable {
     case year(Int, YearSection)
     case debtPlanner
+    case ask
 }
 
 /// The sheets Home can open.
@@ -77,6 +78,11 @@ struct HomeTab: View {
             // The backgrounds are dark in every appearance, so keep the bar text light.
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    NavigationLink(value: HomeDestination.ask) {
+                        Label("Ask", systemImage: "bubble.left.and.text.bubble.right")
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     HideAmountsButton()
                 }
@@ -87,6 +93,8 @@ struct HomeTab: View {
                     YearDetailView(viewModel: viewModel, year: year, initialSection: section)
                 case .debtPlanner:
                     DebtPayoffView(viewModel: viewModel)
+                case .ask:
+                    AskView(viewModel: viewModel)
                 }
             }
             .sheet(item: $sheet) { sheet in
