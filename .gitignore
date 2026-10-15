@@ -1,2 +1,17 @@
+# Xcode settings that belong to one person on one Mac: window layout,
+# breakpoints and scheme list order. Shared schemes live in xcshareddata
+# and stay in the repository.
+xcuserdata/
 *.xcuserstate
-*.xcuserstate
+
+# Build output and test results
+build/
+DerivedData/
+*.xcresult
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
