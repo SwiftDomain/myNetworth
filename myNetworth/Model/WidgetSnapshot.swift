@@ -34,24 +34,19 @@ struct WidgetSnapshot: Equatable {
     /// The snapshot for the latest year up to `now` that has items, or nil when there's none.
     /// Future planning years are left out, and each account counts once at its latest entry.
     static func make(from items: [FinancialItem], now: Date = .now) -> WidgetSnapshot? {
-        let thisYear = Calendar.current.component(.year, from: now)
-        let yearsWithData = Set(items.map(\.year)).filter { $0 <= thisYear }.sorted()
-        guard let year = yearsWithData.last else { return nil }
+        let years = history(of: items, now: now)
+        guard let current = years.last else { return nil }
 
-        let current = totals(of: items, in: year)
-        let trend = yearsWithData.map { pointYear in
-            let yearTotals = totals(of: items, in: pointYear)
-            return YearPoint(year: pointYear, netWorth: yearTotals.assets - yearTotals.liabilities)
-        }
+        let trend = years.map { YearPoint(year: $0.year, netWorth: $0.netWorth) }
         let previous = trend.dropLast().last
         var percentageChange: Double?
         if let previous, previous.netWorth != 0 {
-            let change = (current.assets - current.liabilities) - previous.netWorth
+            let change = current.netWorth - previous.netWorth
             percentageChange = Double(change) / Double(abs(previous.netWorth)) * 100
         }
 
         return WidgetSnapshot(
-            year: year,
+            year: current.year,
             assets: current.assets,
             liabilities: current.liabilities,
             previousYear: previous?.year,
@@ -60,11 +55,64 @@ struct WidgetSnapshot: Equatable {
         )
     }
 
-    private static func totals(of items: [FinancialItem], in year: Int) -> (assets: Int, liabilities: Int) {
-        let entries = items.filter { $0.year == year }.latestEntries()
-        return (
-            assets: entries.filter { $0.itemType == "asset" }.reduce(0) { $0 + $1.amount },
-            liabilities: entries.filter { $0.itemType == "liability" }.reduce(0) { $0 + $1.amount }
+    /// Totals for every year up to `now` that has items, oldest first.
+    static func history(of items: [FinancialItem], now: Date = .now) -> [YearTotals] {
+        let thisYear = Calendar.current.component(.year, from: now)
+        return Set(items.map(\.year)).filter { $0 <= thisYear }.sorted().map { year in
+            let entries = items.filter { $0.year == year }.latestEntries()
+            return YearTotals(
+                year: year,
+                assets: entries.filter { $0.itemType == "asset" }.reduce(0) { $0 + $1.amount },
+                liabilities: entries.filter { $0.itemType == "liability" }.reduce(0) { $0 + $1.amount }
+            )
+        }
+    }
+}
+
+// MARK: - Goal
+
+/// What the goal widget shows: the goal Home features, or the most recently reached one once
+/// every goal is reached.
+struct GoalSnapshot: Equatable {
+    let title: String
+    let isDebtGoal: Bool
+    let targetAmount: Int
+    /// Net worth, total assets or total debt in the latest year with data. Nil without data.
+    let currentAmount: Int?
+    let progress: Double
+    /// Nil without data.
+    let pace: GoalPace?
+    /// Nil for a goal without a target date.
+    let targetDate: Date?
+
+    var isReached: Bool { pace == GoalPace.reached }
+
+    static func make(goals: [Goal], items: [FinancialItem], now: Date = .now) -> GoalSnapshot? {
+        let lastReached = goals
+            .filter { $0.isAchieved }
+            .max { ($0.achievedDate ?? .distantPast) < ($1.achievedDate ?? .distantPast) }
+        guard let goal = GoalCoach.featuredGoal(in: goals) ?? lastReached else { return nil }
+
+        let history = WidgetSnapshot.history(of: items, now: now)
+        var currentAmount: Int?
+        var progress = 0.0
+        if let current = history.last {
+            switch goal.goalType {
+            case "liability": currentAmount = current.liabilities
+            case "asset": currentAmount = current.assets
+            default: currentAmount = current.netWorth
+            }
+            progress = GoalCoach.progress(of: goal, current: current)
+        }
+
+        return GoalSnapshot(
+            title: goal.title,
+            isDebtGoal: goal.goalType == "liability",
+            targetAmount: goal.targetAmount,
+            currentAmount: currentAmount,
+            progress: progress,
+            pace: GoalCoach.pace(of: goal, history: history, now: now),
+            targetDate: goal.hasTargetDate ? goal.targetDate : nil
         )
     }
 }

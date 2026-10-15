@@ -19,6 +19,8 @@ struct NetWorthEntry: TimelineEntry {
     let currencyCode: String
     /// The app's Hide Amounts setting: amounts are masked while it's on.
     var hidesAmounts = false
+    /// The goal the Top Goal widget shows. Nil until a goal is set.
+    var goal: GoalSnapshot? = nil
 }
 
 // MARK: - Timeline Provider
@@ -26,7 +28,7 @@ struct NetWorthEntry: TimelineEntry {
 struct NetWorthProvider: TimelineProvider {
 
     func placeholder(in context: Context) -> NetWorthEntry {
-        NetWorthEntry(date: .now, snapshot: .sample, currencyCode: "USD")
+        NetWorthEntry(date: .now, snapshot: .sample, currencyCode: "USD", goal: .sample)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (NetWorthEntry) -> Void) {
@@ -58,12 +60,14 @@ struct NetWorthProvider: TimelineProvider {
         let context = ModelContext(container)
         let currencyCode = (try? context.fetch(FetchDescriptor<UserSettings>()))?.first?.currencyCode ?? "USD"
         let items = (try? context.fetch(FetchDescriptor<FinancialItem>())) ?? []
+        let goals = (try? context.fetch(FetchDescriptor<Goal>())) ?? []
 
         return NetWorthEntry(
             date: .now,
             snapshot: WidgetSnapshot.make(from: items),
             currencyCode: currencyCode,
-            hidesAmounts: SharedStore.defaults.bool(forKey: SharedStore.hideAmountsKey)
+            hidesAmounts: SharedStore.defaults.bool(forKey: SharedStore.hideAmountsKey),
+            goal: GoalSnapshot.make(goals: goals, items: items)
         )
     }
 }
@@ -83,6 +87,18 @@ extension WidgetSnapshot {
             }
         )
     }()
+}
+
+extension GoalSnapshot {
+    static let sample = GoalSnapshot(
+        title: "Emergency fund",
+        isDebtGoal: false,
+        targetAmount: 20_000,
+        currentAmount: 13_000,
+        progress: 0.65,
+        pace: .onTrack(projected: Calendar.current.date(byAdding: .month, value: 7, to: .now) ?? .now),
+        targetDate: Calendar.current.date(byAdding: .month, value: 10, to: .now)
+    )
 }
 
 // MARK: - Widget Entry View
@@ -501,6 +517,263 @@ struct NetWorthTrendEntryView: View {
     }
 }
 
+// MARK: - Goal Views
+
+/// How the goal is pacing, in one short line.
+struct GoalPaceText: View {
+    let goal: GoalSnapshot
+    let currencyCode: String
+
+    private var currency: IntegerFormatStyle<Int>.Currency {
+        .currency(code: currencyCode).precision(.fractionLength(0))
+    }
+
+    private var monthYear: Date.FormatStyle {
+        .dateTime.month(.abbreviated).year()
+    }
+
+    var body: some View {
+        switch goal.pace {
+        case .reached:
+            Text("Goal reached")
+        case .onTrack(let projected):
+            Text("On track · around \(projected, format: monthYear)")
+        case .behind(let perMonth):
+            Text("Behind · \(goal.isDebtGoal ? "pay down" : "save") \(perMonth, format: currency)/mo")
+                .privacySensitive()
+        case .needs(let perMonth):
+            Text("\(goal.isDebtGoal ? "Pay down" : "Save") \(perMonth, format: currency)/mo to make it")
+                .privacySensitive()
+        case .overdue(let remaining):
+            Text("Date passed · \(remaining, format: currency) to go")
+                .privacySensitive()
+        case .noDate(let projected?):
+            Text("Around \(projected, format: monthYear) at your pace")
+        case .noDate(nil):
+            Text("No target date")
+        case nil:
+            Text("Add your numbers in myNetworth")
+        }
+    }
+}
+
+/// Where the goal stands: "$13,000 of $20,000", or what's still owed for a debt goal.
+struct GoalAmountText: View {
+    let goal: GoalSnapshot
+    let currencyCode: String
+
+    private var currency: IntegerFormatStyle<Int>.Currency {
+        .currency(code: currencyCode).precision(.fractionLength(0))
+    }
+
+    var body: some View {
+        Group {
+            if let current = goal.currentAmount {
+                if goal.isDebtGoal {
+                    Text("\(current, format: currency) owed · goal \(goal.targetAmount, format: currency)")
+                } else {
+                    Text("\(current, format: currency) of \(goal.targetAmount, format: currency)")
+                }
+            } else {
+                Text("Goal \(goal.targetAmount, format: currency)")
+            }
+        }
+        .privacySensitive()
+    }
+}
+
+struct EmptyGoalView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Image(systemName: "target")
+                .foregroundStyle(.blue)
+
+            Spacer()
+
+            Text("Set a goal in myNetworth to see your progress here.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .containerBackground(.fill.tertiary, for: .widget)
+    }
+}
+
+struct SmallGoalView: View {
+    let goal: GoalSnapshot
+    let currencyCode: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Image(systemName: goal.isReached ? "checkmark.seal.fill" : "target")
+                    .foregroundStyle(goal.isReached ? .green : .blue)
+                Spacer()
+                Text(goal.progress, format: .percent.precision(.fractionLength(0)))
+                    .font(.caption)
+                    .bold()
+            }
+
+            Text(goal.title)
+                .font(.headline)
+                .lineLimit(2)
+
+            Spacer(minLength: 0)
+
+            ProgressView(value: goal.progress)
+                .tint(goal.progress >= 1 ? .green : .blue)
+
+            GoalPaceText(goal: goal, currencyCode: currencyCode)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+        }
+        .containerBackground(.fill.tertiary, for: .widget)
+    }
+}
+
+struct MediumGoalView: View {
+    let goal: GoalSnapshot
+    let currencyCode: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Label("Top Goal", systemImage: goal.isReached ? "checkmark.seal.fill" : "target")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                if let targetDate = goal.targetDate {
+                    Text("By \(targetDate, format: .dateTime.month(.abbreviated).year())")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Text(goal.title)
+                .font(.headline)
+                .lineLimit(1)
+
+            GoalAmountText(goal: goal, currencyCode: currencyCode)
+                .font(.subheadline)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+
+            Spacer(minLength: 0)
+
+            HStack {
+                ProgressView(value: goal.progress)
+                    .tint(goal.progress >= 1 ? .green : .blue)
+                Text(goal.progress, format: .percent.precision(.fractionLength(0)))
+                    .font(.caption)
+                    .bold()
+            }
+
+            GoalPaceText(goal: goal, currencyCode: currencyCode)
+                .font(.caption)
+                .foregroundStyle(goal.isReached ? .green : .secondary)
+                .lineLimit(1)
+        }
+        .containerBackground(.fill.tertiary, for: .widget)
+    }
+}
+
+/// A round slot under the clock: a ring filling up toward the goal.
+struct CircularGoalView: View {
+    let goal: GoalSnapshot?
+
+    var body: some View {
+        Group {
+            if let goal {
+                Gauge(value: goal.progress) {
+                    Image(systemName: "target")
+                } currentValueLabel: {
+                    Text(goal.progress * 100, format: .number.precision(.fractionLength(0)))
+                }
+                .gaugeStyle(.accessoryCircularCapacity)
+            } else {
+                ZStack {
+                    AccessoryWidgetBackground()
+                    Image(systemName: "target")
+                        .font(.title3)
+                }
+            }
+        }
+        .containerBackground(.clear, for: .widget)
+    }
+}
+
+/// A wider slot under the clock: the goal, its progress and its pace.
+struct RectangularGoalView: View {
+    let goal: GoalSnapshot?
+    let currencyCode: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            if let goal {
+                HStack {
+                    Label(goal.title, systemImage: "target")
+                        .font(.caption)
+                        .lineLimit(1)
+                        .widgetAccentable()
+                    Spacer(minLength: 4)
+                    Text(goal.progress, format: .percent.precision(.fractionLength(0)))
+                        .font(.caption)
+                        .bold()
+                }
+
+                ProgressView(value: goal.progress)
+
+                GoalPaceText(goal: goal, currencyCode: currencyCode)
+                    .font(.caption)
+                    .lineLimit(1)
+            } else {
+                Label("Goals", systemImage: "target")
+                    .font(.caption)
+                    .widgetAccentable()
+                Text("Set a goal in myNetworth")
+                    .font(.caption)
+                    .lineLimit(2)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .containerBackground(.clear, for: .widget)
+    }
+}
+
+struct GoalEntryView: View {
+    @Environment(\.widgetFamily) var family
+    let entry: NetWorthEntry
+
+    var body: some View {
+        content
+            // Amounts are privacy-sensitive, so they're masked while Hide Amounts is on.
+            .redacted(reason: entry.hidesAmounts ? .privacy : [])
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        switch family {
+        case .accessoryCircular:
+            CircularGoalView(goal: entry.goal)
+        case .accessoryRectangular:
+            RectangularGoalView(goal: entry.goal, currencyCode: entry.currencyCode)
+        case .systemMedium:
+            if let goal = entry.goal {
+                MediumGoalView(goal: goal, currencyCode: entry.currencyCode)
+            } else {
+                EmptyGoalView()
+            }
+        default:
+            if let goal = entry.goal {
+                SmallGoalView(goal: goal, currencyCode: entry.currencyCode)
+            } else {
+                EmptyGoalView()
+            }
+        }
+    }
+}
+
 // MARK: - Widget
 
 struct NetWorthWidget: Widget {
@@ -533,6 +806,23 @@ struct NetWorthTrendWidget: Widget {
     }
 }
 
+/// Progress toward the goal Home features, and whether it's on pace.
+struct GoalWidget: Widget {
+    let kind = "GoalWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: NetWorthProvider()) { entry in
+            GoalEntryView(entry: entry)
+        }
+        .configurationDisplayName("Top Goal")
+        .description("Progress toward your next goal, and whether you're on pace.")
+        .supportedFamilies([
+            .systemSmall, .systemMedium,
+            .accessoryCircular, .accessoryRectangular,
+        ])
+    }
+}
+
 // MARK: - Widget Bundle
 
 @main
@@ -540,6 +830,7 @@ struct NetWorthWidgetBundle: WidgetBundle {
     var body: some Widget {
         NetWorthWidget()
         NetWorthTrendWidget()
+        GoalWidget()
     }
 }
 
@@ -588,4 +879,29 @@ struct NetWorthWidgetBundle: WidgetBundle {
     NetWorthTrendWidget()
 } timeline: {
     NetWorthEntry(date: .now, snapshot: .sample, currencyCode: "USD")
+}
+
+#Preview("Goal, Small", as: .systemSmall) {
+    GoalWidget()
+} timeline: {
+    NetWorthEntry(date: .now, snapshot: .sample, currencyCode: "USD", goal: .sample)
+    NetWorthEntry(date: .now, snapshot: .sample, currencyCode: "USD")
+}
+
+#Preview("Goal, Medium", as: .systemMedium) {
+    GoalWidget()
+} timeline: {
+    NetWorthEntry(date: .now, snapshot: .sample, currencyCode: "USD", goal: .sample)
+}
+
+#Preview("Goal, Lock Screen", as: .accessoryRectangular) {
+    GoalWidget()
+} timeline: {
+    NetWorthEntry(date: .now, snapshot: .sample, currencyCode: "USD", goal: .sample)
+}
+
+#Preview("Goal, Lock Screen Circular", as: .accessoryCircular) {
+    GoalWidget()
+} timeline: {
+    NetWorthEntry(date: .now, snapshot: .sample, currencyCode: "USD", goal: .sample)
 }

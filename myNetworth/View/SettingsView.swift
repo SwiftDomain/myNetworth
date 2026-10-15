@@ -6,6 +6,7 @@
 import SwiftUI
 import SwiftData
 import UIKit
+import UniformTypeIdentifiers
 
 // MARK: - Settings View
 
@@ -19,6 +20,12 @@ struct SettingsView: View {
     @Environment(\.openURL) private var openURL
     @State private var exportYear: Int
     @State private var pdfURL: URL?
+    @State private var csvURL: URL?
+    @State private var allYearsCSVURL: URL?
+    @State private var showingImporter = false
+    @State private var fileToImport: CSVImport?
+    @State private var importProblem: String?
+    @State private var importResult: ImportSummary?
 
     private let currencies = [
         "USD", "EUR", "GBP", "JPY", "CAD", "AUD", "CHF", "CNY", "INR", "MXN",
@@ -88,10 +95,17 @@ struct SettingsView: View {
                     }
                 }
 
-                Section("Data Management") {
+                Section {
                     NavigationLink("Custom Categories") {
                         ManageCategoriesView(viewModel: viewModel)
                     }
+                    Button("Import from CSV", systemImage: "square.and.arrow.down") {
+                        showingImporter = true
+                    }
+                } header: {
+                    Text("Data Management")
+                } footer: {
+                    Text("Import a CSV file with Name and Amount columns, plus Year, Category, Type and Month if it has them, like the files Export makes.")
                 }
 
                 Section("Export") {
@@ -105,17 +119,27 @@ struct SettingsView: View {
                             }
                         }
 
-                        ShareLink(
-                            "Export CSV",
-                            item: viewModel.generateCSV(for: exportYear),
-                            preview: SharePreview("Net Worth \(String(exportYear)).csv")
-                        )
+                        if let csvURL {
+                            ShareLink(
+                                "Export CSV",
+                                item: csvURL,
+                                preview: SharePreview("Net Worth \(String(exportYear)).csv")
+                            )
+                        }
 
                         if let pdfURL {
                             ShareLink(
                                 "Export PDF Report",
                                 item: pdfURL,
                                 preview: SharePreview("Net Worth \(String(exportYear)).pdf")
+                            )
+                        }
+
+                        if let allYearsCSVURL {
+                            ShareLink(
+                                "Export All Years (CSV)",
+                                item: allYearsCSVURL,
+                                preview: SharePreview("Net Worth All Years.csv")
                             )
                         }
                     }
@@ -141,6 +165,41 @@ struct SettingsView: View {
             .task {
                 notificationsDenied = await BalanceReminder.isDenied()
             }
+            .task(id: "\(exportYear)-\(viewModel.refreshToken)") {
+                // The CSV files follow every change, since Settings stays open as a tab.
+                csvURL = viewModel.years.contains(exportYear)
+                    ? viewModel.csvFile(named: "Net Worth \(String(exportYear)).csv", contents: viewModel.generateCSV(for: exportYear))
+                    : nil
+                allYearsCSVURL = viewModel.csvFile(named: "Net Worth All Years.csv", contents: viewModel.generateAllYearsCSV())
+            }
+            .fileImporter(isPresented: $showingImporter, allowedContentTypes: [.commaSeparatedText, .plainText, .text]) { result in
+                readImportFile(result)
+            }
+            .sheet(isPresented: Binding(get: { fileToImport != nil }, set: { if !$0 { fileToImport = nil } })) {
+                if let fileToImport {
+                    CSVImportView(viewModel: viewModel, file: fileToImport) { summary in
+                        importResult = summary
+                    }
+                }
+            }
+            .alert(
+                "Couldn't Import",
+                isPresented: Binding(get: { importProblem != nil }, set: { if !$0 { importProblem = nil } }),
+                presenting: importProblem
+            ) { _ in
+                Button("OK") {}
+            } message: { problem in
+                Text(problem)
+            }
+            .alert(
+                "Import Complete",
+                isPresented: Binding(get: { importResult != nil }, set: { if !$0 { importResult = nil } }),
+                presenting: importResult
+            ) { _ in
+                Button("OK") {}
+            } message: { summary in
+                Text(CSVImportView.resultMessage(for: summary))
+            }
             .task(id: "\(exportYear)-\(viewModel.currencyCode)") {
                 // Render only the selected year's report, and only when the year or
                 // currency changes, instead of every year's PDF on every redraw.
@@ -148,6 +207,34 @@ struct SettingsView: View {
                     ? viewModel.generatePDFURL(for: exportYear)
                     : nil
             }
+        }
+    }
+
+    // MARK: Import
+
+    /// Reads the file picked for importing, then shows what it has before anything is added.
+    private func readImportFile(_ result: Result<URL, any Error>) {
+        switch result {
+        case .success(let url):
+            // Files from outside the app need permission to be read.
+            let isAccessing = url.startAccessingSecurityScopedResource()
+            defer {
+                if isAccessing { url.stopAccessingSecurityScopedResource() }
+            }
+            guard let data = try? Data(contentsOf: url) else {
+                importProblem = "The file couldn't be opened."
+                return
+            }
+            // Spreadsheets sometimes save in an older encoding rather than UTF-8.
+            let text = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) ?? ""
+            switch CSVImport.read(text) {
+            case .read(let file):
+                fileToImport = file
+            case .failed(let problem):
+                importProblem = problem.message
+            }
+        case .failure(let error):
+            importProblem = error.localizedDescription
         }
     }
 

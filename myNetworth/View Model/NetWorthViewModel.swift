@@ -428,32 +428,24 @@ class NetWorthViewModel {
     /// How a goal is pacing toward its target date, judged from the last few years with
     /// data. Nil when there's no data yet.
     func goalPace(for goal: Goal, now: Date = .now) -> GoalPace? {
-        if goal.isAchieved { return .reached }
-        guard let year = latestYearWithData else { return nil }
-
-        let target = goal.goalType == "liability" ? -goal.targetAmount : goal.targetAmount
-        let history = yearsWithData
-            .filter { $0 <= year }
-            .sorted()
-            .map { (year: $0, value: goalMeasure(goal, in: $0)) }
-
-        return GoalCoach.pace(
-            remaining: target - goalMeasure(goal, in: year),
-            monthsLeft: goal.hasTargetDate ? GoalCoach.monthsLeft(from: now, to: goal.targetDate) : nil,
-            pacePerMonth: GoalCoach.pacePerMonth(values: history),
-            now: now
-        )
+        GoalCoach.pace(of: goal, history: goalHistory, now: now)
     }
 
-    /// What a goal measures in `year`, oriented so that higher is better: net worth, total
-    /// assets, or total debt as a negative number.
-    private func goalMeasure(_ goal: Goal, in year: Int) -> Int {
+    /// Totals for each year with data up to the latest one, oldest first: what goals are
+    /// measured against.
+    private var goalHistory: [YearTotals] {
+        guard let year = latestYearWithData else { return [] }
+        return yearsWithData.filter { $0 <= year }.sorted().map { yearTotals($0) }
+    }
+
+    private func yearTotals(_ year: Int) -> YearTotals {
         let data = getYearData(for: year)
-        switch goal.goalType {
-        case "liability": return -data.liabilities
-        case "asset": return data.assets
-        default: return data.netWorth
-        }
+        return YearTotals(year: year, assets: data.assets, liabilities: data.liabilities)
+    }
+
+    /// The goal Home features: the unreached goal with the nearest target date.
+    var featuredGoal: Goal? {
+        GoalCoach.featuredGoal(in: goals)
     }
 
     func deleteGoal(_ goal: Goal) {
@@ -477,25 +469,7 @@ class NetWorthViewModel {
     /// How far along a goal is, from 0 (not started) to 1 (reached).
     func goalProgress(for goal: Goal) -> Double {
         guard let year = latestYearWithData else { return 0 }
-        let current = getYearData(for: year)
-
-        let progress: Double
-        switch goal.goalType {
-        case "liability":
-            // Debt goals count down: progress is the share of the debt paid off since the
-            // goal was set, so owing more than the target no longer reads as "complete".
-            let start = goal.startAmount ?? current.liabilities
-            let toPayOff = start - goal.targetAmount
-            guard toPayOff > 0 else { return current.liabilities <= goal.targetAmount ? 1 : 0 }
-            progress = Double(start - current.liabilities) / Double(toPayOff)
-        case "asset":
-            guard goal.targetAmount > 0 else { return 0 }
-            progress = Double(current.assets) / Double(goal.targetAmount)
-        default:
-            guard goal.targetAmount > 0 else { return 0 }
-            progress = Double(current.netWorth) / Double(goal.targetAmount)
-        }
-        return min(max(progress, 0), 1)
+        return GoalCoach.progress(of: goal, current: yearTotals(year))
     }
 
     /// Total liabilities in the latest year with data on or before the year the goal was
@@ -685,6 +659,136 @@ class NetWorthViewModel {
         return csv
     }
 
+    /// Every year's entries in one file, with a Year column, oldest year first. Import reads
+    /// it back.
+    func generateAllYearsCSV() -> String {
+        var csv = "Year,Name,Amount,Category,Type,Month\n"
+        let allItems = (assets + liabilities).sorted {
+            ($0.year, $0.name, $0.month) < ($1.year, $1.name, $1.month)
+        }
+        for item in allItems {
+            let fields = [String(item.year), item.name, String(item.amount), item.category, item.itemType, String(item.month)]
+            csv += fields.map(csvField).joined(separator: ",") + "\n"
+        }
+        return csv
+    }
+
+    /// Writes CSV text to a temporary file, so it's shared as a .csv file rather than text.
+    func csvFile(named fileName: String, contents: String) -> URL? {
+        let url = URL.temporaryDirectory.appending(path: fileName)
+        do {
+            try contents.write(to: url, atomically: true, encoding: .utf8)
+            return url
+        } catch {
+            return nil
+        }
+    }
+
+    // MARK: - Import
+
+    /// What importing `entries` would do. `year` is used for entries from a file without a
+    /// Year column.
+    func importSummary(of entries: [ImportedEntry], year: Int) -> ImportSummary {
+        let categories = resolveCategories(for: entries)
+        let matches = existingMatches(for: entries, categories: categories.names, year: year)
+        let updated = matches.compactMap { $0 }.count
+        let entryYears = Set(entries.map { $0.year ?? year })
+        return ImportSummary(
+            added: entries.count - updated,
+            updated: updated,
+            newYears: entryYears.subtracting(years).sorted(),
+            newCategories: categories.new
+        )
+    }
+
+    /// Adds the entries, along with any years and categories they need. An entry for an item
+    /// that's already there (same name, category, type, year and month) updates its amount
+    /// instead, so importing the same file twice doesn't count anything twice.
+    @discardableResult
+    func importEntries(_ entries: [ImportedEntry], year: Int) -> ImportSummary {
+        let summary = importSummary(of: entries, year: year)
+        let categories = resolveCategories(for: entries)
+        let matches = existingMatches(for: entries, categories: categories.names, year: year)
+
+        for newYear in summary.newYears {
+            modelContext.insert(TrackedYear(year: newYear))
+        }
+        for category in categories.new {
+            modelContext.insert(CustomCategory(name: category.name, itemType: category.isAsset ? "asset" : "liability"))
+        }
+        let now = Date.now
+        for (index, entry) in entries.enumerated() {
+            if let match = matches[index] {
+                match.amount = entry.amount
+                match.updatedAt = now
+            } else {
+                modelContext.insert(FinancialItem(
+                    name: entry.name,
+                    amount: entry.amount,
+                    year: entry.year ?? year,
+                    month: entry.month,
+                    category: categories.names[index],
+                    itemType: entry.isAsset ? "asset" : "liability"
+                ))
+            }
+        }
+        didMutate()
+        return summary
+    }
+
+    /// Each entry's category as the app spells it, matched without regard to case; blank
+    /// means Other. Categories the app doesn't have yet are listed once as new.
+    private func resolveCategories(for entries: [ImportedEntry]) -> (names: [String], new: [ImportSummary.NewCategory]) {
+        var known: [String: String] = [:]
+        for type in [ItemType.asset, .liability] {
+            for name in allCategoryNames(for: type) {
+                known["\(type.rawValue)|\(name.lowercased())"] = name
+            }
+        }
+
+        var newCategories: [ImportSummary.NewCategory] = []
+        var names: [String] = []
+        for entry in entries {
+            guard !entry.category.isEmpty else {
+                names.append("Other")
+                continue
+            }
+            let key = "\(entry.isAsset ? "asset" : "liability")|\(entry.category.lowercased())"
+            if let name = known[key] {
+                names.append(name)
+            } else {
+                known[key] = entry.category
+                newCategories.append(ImportSummary.NewCategory(name: entry.category, isAsset: entry.isAsset))
+                names.append(entry.category)
+            }
+        }
+        return (names, newCategories)
+    }
+
+    /// The existing item each entry updates, or nil for an entry that's added. Each item is
+    /// matched at most once, so a file listing the same account twice in a year (two items
+    /// that add up) brings both back.
+    private func existingMatches(for entries: [ImportedEntry], categories: [String], year: Int) -> [FinancialItem?] {
+        var unmatched = Dictionary(grouping: assets + liabilities) { ImportKey($0) }
+        var matches: [FinancialItem?] = []
+        for (index, entry) in entries.enumerated() {
+            let key = ImportKey(
+                year: entry.year ?? year,
+                month: entry.month,
+                name: entry.name,
+                category: categories[index],
+                itemType: entry.isAsset ? "asset" : "liability"
+            )
+            if var candidates = unmatched[key], !candidates.isEmpty {
+                matches.append(candidates.removeFirst())
+                unmatched[key] = candidates
+            } else {
+                matches.append(nil)
+            }
+        }
+        return matches
+    }
+
     // MARK: - PDF Export
 
     @MainActor
@@ -720,6 +824,27 @@ class NetWorthViewModel {
 }
 
 // MARK: - CSV Utility
+
+/// What makes an imported entry the same as an existing item.
+private struct ImportKey: Hashable {
+    let year: Int
+    let month: Int
+    let name: String
+    let category: String
+    let itemType: String
+
+    init(year: Int, month: Int, name: String, category: String, itemType: String) {
+        self.year = year
+        self.month = month
+        self.name = name
+        self.category = category
+        self.itemType = itemType
+    }
+
+    init(_ item: FinancialItem) {
+        self.init(year: item.year, month: item.month, name: item.name, category: item.category, itemType: item.itemType)
+    }
+}
 
 /// Quotes a CSV field that contains a comma, quote or line break, doubling any
 /// embedded quotes (RFC 4180), so names like "Smith, John" stay in one column.

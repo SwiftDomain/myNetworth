@@ -169,7 +169,7 @@ struct PlanTab: View {
 
     private var goalsDetail: Text {
         let activeGoals = viewModel.goals.filter { !$0.isAchieved }
-        guard let goal = activeGoals.first else {
+        guard let goal = viewModel.featuredGoal else {
             return viewModel.goals.isEmpty
                 ? Text("Set a goal and track your progress")
                 : Text("Every goal reached")
