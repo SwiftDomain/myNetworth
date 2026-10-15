@@ -1,0 +1,76 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Pick an iPhone simulator
+        id: simulator
+        run: |
+          udid=$(xcrun simctl list devices available -j | python3 -c '
+          import json, re, sys
+          devices = json.load(sys.stdin)["devices"]
+          def version(runtime):
+              match = re.search(r"iOS-(\d+)-(\d+)", runtime)
+              return tuple(map(int, match.groups())) if match else (0, 0)
+          for runtime in sorted(devices, key=version, reverse=True):
+              if version(runtime) < (26, 0):
+                  continue
+              for device in devices[runtime]:
+                  if device["name"].startswith("iPhone"):
+                      print(device["udid"])
+                      sys.exit()
+          ')
+          if [ -z "$udid" ]; then
+            echo "No iOS 26 iPhone simulator found" >&2
+            xcrun simctl list devices available
+            exit 1
+          fi
+          echo "Using simulator $udid"
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+
+      - name: Build and run tests
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project myNetworth.xcodeproj \
+            -scheme myNetworth \
+            -destination "id=${{ steps.simulator.outputs.udid }}" \
+            -resultBundlePath TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee xcodebuild.log | {
+              if command -v xcbeautify > /dev/null; then xcbeautify --renderer github-actions; else cat; fi
+            }
+
+      - name: Show errors and test results
+        if: always()
+        run: |
+          if [ -f xcodebuild.log ]; then
+            grep -E "error:|warning: .*myNetworth|Test (Case|Suite|run)|✘|✔|passed|failed" xcodebuild.log | grep -v "^note:" | tail -n 300 || true
+          fi
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TestResults
+          path: |
+            TestResults.xcresult
+            xcodebuild.log

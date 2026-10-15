@@ -30,6 +30,16 @@
 		3EBC70B02EFF1031009DF832 /* CategoryBreakdownTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EBC70AF2EFF1031009DF832 /* CategoryBreakdownTile.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		3EAA001C2F00000C001016E5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3E3EDA932EE39580001016E5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3E3EDA9A2EE39580001016E5;
+			remoteInfo = myNetworth;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		3E3EDA9B2EE39580001016E5 /* myNetworth.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = myNetworth.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3E3EDAA92EE39D96001016E5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -54,10 +64,26 @@
 		3EAA00082F000005001016E5 /* DebtPayoffView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebtPayoffView.swift; sourceTree = "<group>"; };
 		3EAA000C2F000007001016E5 /* SharedStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedStore.swift; sourceTree = "<group>"; };
 		3EBC70AF2EFF1031009DF832 /* CategoryBreakdownTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryBreakdownTile.swift; sourceTree = "<group>"; };
+		3EAA00162F00000C001016E5 /* myNetworthTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = myNetworthTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		3EAA00172F00000C001016E5 /* myNetworthTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = myNetworthTests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		3E3EDA982EE39580001016E5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3EAA001A2F00000C001016E5 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -71,6 +97,7 @@
 			isa = PBXGroup;
 			children = (
 				3E3EDAAC2EE39D96001016E5 /* myNetworth */,
+				3EAA00172F00000C001016E5 /* myNetworthTests */,
 				3E3EDA9C2EE39580001016E5 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -79,6 +106,7 @@
 			isa = PBXGroup;
 			children = (
 				3E3EDA9B2EE39580001016E5 /* myNetworth.app */,
+				3EAA00162F00000C001016E5 /* myNetworthTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -158,6 +186,29 @@
 			productReference = 3E3EDA9B2EE39580001016E5 /* myNetworth.app */;
 			productType = "com.apple.product-type.application";
 		};
+		3EAA00182F00000C001016E5 /* myNetworthTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3EAA001E2F00000C001016E5 /* Build configuration list for PBXNativeTarget "myNetworthTests" */;
+			buildPhases = (
+				3EAA00192F00000C001016E5 /* Sources */,
+				3EAA001A2F00000C001016E5 /* Frameworks */,
+				3EAA001B2F00000C001016E5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3EAA001D2F00000C001016E5 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				3EAA00172F00000C001016E5 /* myNetworthTests */,
+			);
+			name = myNetworthTests;
+			packageProductDependencies = (
+			);
+			productName = myNetworthTests;
+			productReference = 3EAA00162F00000C001016E5 /* myNetworthTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -170,6 +221,10 @@
 				TargetAttributes = {
 					3E3EDA9A2EE39580001016E5 = {
 						CreatedOnToolsVersion = 26.1.1;
+					};
+					3EAA00182F00000C001016E5 = {
+						CreatedOnToolsVersion = 26.1.1;
+						TestTargetID = 3E3EDA9A2EE39580001016E5;
 					};
 				};
 			};
@@ -188,6 +243,7 @@
 			projectRoot = "";
 			targets = (
 				3E3EDA9A2EE39580001016E5 /* myNetworth */,
+				3EAA00182F00000C001016E5 /* myNetworthTests */,
 			);
 		};
 /* End PBXProject section */
@@ -198,6 +254,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				3E3EDAAD2EE39D96001016E5 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3EAA001B2F00000C001016E5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -231,7 +294,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3EAA00192F00000C001016E5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		3EAA001D2F00000C001016E5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3E3EDA9A2EE39580001016E5 /* myNetworth */;
+			targetProxy = 3EAA001C2F00000C001016E5 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		3E3EDAA42EE39581001016E5 /* Debug */ = {
@@ -451,6 +529,56 @@
 			};
 			name = Release;
 		};
+		3EAA001F2F00000C001016E5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = 5G4KHSNPYL;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 2.2;
+				PRODUCT_BUNDLE_IDENTIFIER = SwiftDomain.myNetworthTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/myNetworth.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/myNetworth";
+			};
+			name = Debug;
+		};
+		3EAA00202F00000C001016E5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = 5G4KHSNPYL;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 2.2;
+				PRODUCT_BUNDLE_IDENTIFIER = SwiftDomain.myNetworthTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/myNetworth.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/myNetworth";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -468,6 +596,15 @@
 			buildConfigurations = (
 				3E3EDAA72EE39581001016E5 /* Debug */,
 				3E3EDAA82EE39581001016E5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3EAA001E2F00000C001016E5 /* Build configuration list for PBXNativeTarget "myNetworthTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3EAA001F2F00000C001016E5 /* Debug */,
+				3EAA00202F00000C001016E5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

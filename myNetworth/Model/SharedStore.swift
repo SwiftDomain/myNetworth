@@ -47,8 +47,8 @@ enum SharedStore {
     /// user's data behind. The original is left in place as a backup.
     ///
     /// Returns `false` if the copy failed. The caller should keep using the legacy store
-    /// for this launch; the copy is retried on the next one.
-    static func copyLegacyStoreIfNeeded(to sharedURL: URL) -> Bool {
+    /// for this launch; the copy is retried on the next one. `legacyURL` is only passed by tests.
+    static func copyLegacyStoreIfNeeded(from legacyURL: URL = SharedStore.legacyStoreURL, to sharedURL: URL) -> Bool {
         let fileManager = FileManager.default
         try? fileManager.createDirectory(
             at: sharedURL.deletingLastPathComponent(),
@@ -56,7 +56,7 @@ enum SharedStore {
         )
 
         guard !fileManager.fileExists(atPath: sharedURL.path(percentEncoded: false)),
-              fileManager.fileExists(atPath: legacyStoreURL.path(percentEncoded: false)) else {
+              fileManager.fileExists(atPath: legacyURL.path(percentEncoded: false)) else {
             return true
         }
 
@@ -67,7 +67,7 @@ enum SharedStore {
         let staging = sibling(of: sharedURL, suffix: ".copying")
         do {
             for suffix in sideFileSuffixes {
-                let source = sibling(of: legacyStoreURL, suffix: suffix)
+                let source = sibling(of: legacyURL, suffix: suffix)
                 let destination = sibling(of: sharedURL, suffix: suffix)
                 try? fileManager.removeItem(at: destination) // left over from an interrupted copy
                 if fileManager.fileExists(atPath: source.path(percentEncoded: false)) {
@@ -75,7 +75,7 @@ enum SharedStore {
                 }
             }
             try? fileManager.removeItem(at: staging)
-            try fileManager.copyItem(at: legacyStoreURL, to: staging)
+            try fileManager.copyItem(at: legacyURL, to: staging)
             try fileManager.moveItem(at: staging, to: sharedURL)
             return true
         } catch {
