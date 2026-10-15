@@ -8,6 +8,9 @@
 import SwiftUI
 import SwiftData
 import Charts
+import Combine
+import CoreData
+import Foundation
 import LocalAuthentication
 
 // MARK: - Main View (Year Selection)
@@ -45,6 +48,28 @@ struct HomePage: View {
             if newPhase == .background, let viewModel {
                 isUnlocked = !viewModel.settings.requireBiometricLock
             }
+            // Show anything iCloud brought in while the app was in the background.
+            if newPhase == .active {
+                viewModel?.refreshFromStore()
+            }
+        }
+        // iCloud changes are saved to the store in the background; redraw when they arrive.
+        .onReceive(
+            NotificationCenter.default
+                .publisher(for: NSPersistentCloudKitContainer.eventChangedNotification)
+                .receive(on: DispatchQueue.main)
+        ) { notification in
+            let key = NSPersistentCloudKitContainer.eventNotificationUserInfoKey
+            guard let event = notification.userInfo?[key] as? NSPersistentCloudKitContainer.Event,
+                  event.type == .import, event.endDate != nil else { return }
+            viewModel?.refreshFromStore()
+        }
+        .onReceive(
+            NotificationCenter.default
+                .publisher(for: .NSPersistentStoreRemoteChange)
+                .receive(on: DispatchQueue.main)
+        ) { _ in
+            viewModel?.refreshFromStore()
         }
     }
 }

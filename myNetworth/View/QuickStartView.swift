@@ -60,6 +60,10 @@ struct QuickStartView: View {
                             Text("Tap what you have, then add rough amounts. It takes about a minute, and you can add more later.")
                                 .font(.subheadline)
                                 .foregroundStyle(Theme.textSecondary)
+
+                            Text("Already use myNetworth on another device? Tap Skip, and your numbers will appear once iCloud syncs.")
+                                .font(.footnote)
+                                .foregroundStyle(Theme.textSecondary)
                         }
 
                         tiles("What you own", StarterAccount.assets)
