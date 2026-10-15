@@ -32,6 +32,12 @@
 		3EAA00242F00000D001016E5 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00232F00000D001016E5 /* MainTabView.swift */; };
 		3EAA00262F00000D001016E5 /* HomeTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00252F00000D001016E5 /* HomeTab.swift */; };
 		3EAA00282F00000D001016E5 /* AccountsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00272F00000D001016E5 /* AccountsTab.swift */; };
+		3EAA002A2F00000E001016E5 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00292F00000E001016E5 /* WidgetSnapshot.swift */; };
+		3EAA002B2F00000E001016E5 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00292F00000E001016E5 /* WidgetSnapshot.swift */; };
+		3EAA002D2F00000E001016E5 /* NetWorthWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA002C2F00000E001016E5 /* NetWorthWidget.swift */; };
+		3EAA00312F00000E001016E5 /* FinancialItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E3EDAB22EE39E1D001016E5 /* FinancialItem.swift */; };
+		3EAA00322F00000E001016E5 /* SharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA000C2F000007001016E5 /* SharedStore.swift */; };
+		3EAA00342F00000E001016E5 /* NetWorthWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3EAA00332F00000E001016E5 /* NetWorthWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -42,7 +48,28 @@
 			remoteGlobalIDString = 3E3EDA9A2EE39580001016E5;
 			remoteInfo = myNetworth;
 		};
+		3EAA003B2F00000E001016E5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3E3EDA932EE39580001016E5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3EAA00362F00000E001016E5;
+			remoteInfo = NetWorthWidgetExtension;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		3EAA003A2F00000E001016E5 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				3EAA00342F00000E001016E5 /* NetWorthWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		3E3EDA9B2EE39580001016E5 /* myNetworth.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = myNetworth.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -73,6 +100,12 @@
 		3EAA00232F00000D001016E5 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		3EAA00252F00000D001016E5 /* HomeTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTab.swift; sourceTree = "<group>"; };
 		3EAA00272F00000D001016E5 /* AccountsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountsTab.swift; sourceTree = "<group>"; };
+		3EAA00292F00000E001016E5 /* WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshot.swift; sourceTree = "<group>"; };
+		3EAA002C2F00000E001016E5 /* NetWorthWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetWorthWidget.swift; sourceTree = "<group>"; };
+		3EAA002E2F00000E001016E5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		3EAA002F2F00000E001016E5 /* NetWorthWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NetWorthWidget.entitlements; sourceTree = "<group>"; };
+		3EAA00302F00000E001016E5 /* myNetworth.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = myNetworth.entitlements; sourceTree = "<group>"; };
+		3EAA00332F00000E001016E5 /* NetWorthWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NetWorthWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -98,6 +131,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3EAA00382F00000E001016E5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -105,6 +145,7 @@
 			isa = PBXGroup;
 			children = (
 				3E3EDAAC2EE39D96001016E5 /* myNetworth */,
+				3EAA00352F00000E001016E5 /* NetWorthWidget */,
 				3EAA00172F00000C001016E5 /* myNetworthTests */,
 				3E3EDA9C2EE39580001016E5 /* Products */,
 			);
@@ -115,6 +156,7 @@
 			children = (
 				3E3EDA9B2EE39580001016E5 /* myNetworth.app */,
 				3EAA00162F00000C001016E5 /* myNetworthTests.xctest */,
+				3EAA00332F00000E001016E5 /* NetWorthWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -122,6 +164,7 @@
 		3E3EDAAC2EE39D96001016E5 /* myNetworth */ = {
 			isa = PBXGroup;
 			children = (
+				3EAA00302F00000E001016E5 /* myNetworth.entitlements */,
 				3E8D7E1E2F5B87DC00C7215D /* myNetworthRelease.entitlements */,
 				3E3EDAB12EE39DAB001016E5 /* Model */,
 				3E3EDAB02EE39DA1001016E5 /* View */,
@@ -164,6 +207,7 @@
 				3EAA00022F000002001016E5 /* MigrationManager.swift */,
 				3EAA000C2F000007001016E5 /* SharedStore.swift */,
 				3EAA00212F00000D001016E5 /* Dashboard.swift */,
+				3EAA00292F00000E001016E5 /* WidgetSnapshot.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -176,6 +220,16 @@
 			path = "View Model";
 			sourceTree = "<group>";
 		};
+		3EAA00352F00000E001016E5 /* NetWorthWidget */ = {
+			isa = PBXGroup;
+			children = (
+				3EAA002C2F00000E001016E5 /* NetWorthWidget.swift */,
+				3EAA002E2F00000E001016E5 /* Info.plist */,
+				3EAA002F2F00000E001016E5 /* NetWorthWidget.entitlements */,
+			);
+			path = NetWorthWidget;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -186,10 +240,12 @@
 				3E3EDA972EE39580001016E5 /* Sources */,
 				3E3EDA982EE39580001016E5 /* Frameworks */,
 				3E3EDA992EE39580001016E5 /* Resources */,
+				3EAA003A2F00000E001016E5 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				3EAA003C2F00000E001016E5 /* PBXTargetDependency */,
 			);
 			name = myNetworth;
 			packageProductDependencies = (
@@ -221,6 +277,25 @@
 			productReference = 3EAA00162F00000C001016E5 /* myNetworthTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		3EAA00362F00000E001016E5 /* NetWorthWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3EAA003D2F00000E001016E5 /* Build configuration list for PBXNativeTarget "NetWorthWidgetExtension" */;
+			buildPhases = (
+				3EAA00372F00000E001016E5 /* Sources */,
+				3EAA00382F00000E001016E5 /* Frameworks */,
+				3EAA00392F00000E001016E5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NetWorthWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = NetWorthWidgetExtension;
+			productReference = 3EAA00332F00000E001016E5 /* NetWorthWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -237,6 +312,9 @@
 					3EAA00182F00000C001016E5 = {
 						CreatedOnToolsVersion = 26.1.1;
 						TestTargetID = 3E3EDA9A2EE39580001016E5;
+					};
+					3EAA00362F00000E001016E5 = {
+						CreatedOnToolsVersion = 26.1.1;
 					};
 				};
 			};
@@ -256,6 +334,7 @@
 			targets = (
 				3E3EDA9A2EE39580001016E5 /* myNetworth */,
 				3EAA00182F00000C001016E5 /* myNetworthTests */,
+				3EAA00362F00000E001016E5 /* NetWorthWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -270,6 +349,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		3EAA001B2F00000C001016E5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3EAA00392F00000E001016E5 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -307,6 +393,7 @@
 				3EAA00242F00000D001016E5 /* MainTabView.swift in Sources */,
 				3EAA00262F00000D001016E5 /* HomeTab.swift in Sources */,
 				3EAA00282F00000D001016E5 /* AccountsTab.swift in Sources */,
+				3EAA002A2F00000E001016E5 /* WidgetSnapshot.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -317,6 +404,17 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3EAA00372F00000E001016E5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3EAA002D2F00000E001016E5 /* NetWorthWidget.swift in Sources */,
+				3EAA002B2F00000E001016E5 /* WidgetSnapshot.swift in Sources */,
+				3EAA00312F00000E001016E5 /* FinancialItem.swift in Sources */,
+				3EAA00322F00000E001016E5 /* SharedStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -324,6 +422,11 @@
 			isa = PBXTargetDependency;
 			target = 3E3EDA9A2EE39580001016E5 /* myNetworth */;
 			targetProxy = 3EAA001C2F00000C001016E5 /* PBXContainerItemProxy */;
+		};
+		3EAA003C2F00000E001016E5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3EAA00362F00000E001016E5 /* NetWorthWidgetExtension */;
+			targetProxy = 3EAA003B2F00000E001016E5 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -453,6 +556,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = myNetworth/myNetworth.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
 				DEAD_CODE_STRIPPING = YES;
@@ -595,6 +699,72 @@
 			};
 			name = Release;
 		};
+		3EAA003E2F00000E001016E5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = NetWorthWidget/NetWorthWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = 5G4KHSNPYL;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = NetWorthWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Net Worth";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 2.2;
+				PRODUCT_BUNDLE_IDENTIFIER = SwiftDomain.myNetworth.NetWorthWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		3EAA003F2F00000E001016E5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = NetWorthWidget/NetWorthWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = 5G4KHSNPYL;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = NetWorthWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Net Worth";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 2.2;
+				PRODUCT_BUNDLE_IDENTIFIER = SwiftDomain.myNetworth.NetWorthWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -621,6 +791,15 @@
 			buildConfigurations = (
 				3EAA001F2F00000C001016E5 /* Debug */,
 				3EAA00202F00000C001016E5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3EAA003D2F00000E001016E5 /* Build configuration list for PBXNativeTarget "NetWorthWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3EAA003E2F00000E001016E5 /* Debug */,
+				3EAA003F2F00000E001016E5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
