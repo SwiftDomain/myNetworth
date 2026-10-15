@@ -213,13 +213,13 @@ struct AddYearView: View {
                         }
 
                         if let sourceYear {
-                            let itemCount = viewModel.yearlyItems(in: sourceYear).count
+                            let itemCount = viewModel.latestEntries(in: sourceYear).count
                             Toggle(isOn: $startFromPreviousYear) {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Start with \(String(sourceYear))'s items")
                                         .font(.headline)
                                         .foregroundStyle(Theme.textPrimary)
-                                    Text("Copies \(itemCount) yearly \(itemCount == 1 ? "item" : "items") and their amounts, so you only update what changed.")
+                                    Text("Copies \(itemCount) \(itemCount == 1 ? "item" : "items") at their latest amounts, so you only update what changed.")
                                         .font(.caption)
                                         .foregroundStyle(Theme.textSecondary)
                                 }
@@ -522,12 +522,13 @@ struct MonthlyBreakdownView: View {
     var viewModel: NetWorthViewModel
     let year: Int
 
-    private var data: [(month: Int, assets: Int, liabilities: Int, netWorth: Int)] {
+    private var data: [MonthlyBalance] {
         viewModel.monthlyData(for: year)
     }
 
-    private var hasMonthlyData: Bool {
-        data.contains { $0.assets > 0 || $0.liabilities > 0 }
+    /// The last month with entries, whose balances are the year's latest.
+    private var latest: MonthlyBalance? {
+        data.last { $0.hasEntries }
     }
 
     var body: some View {
@@ -536,23 +537,24 @@ struct MonthlyBreakdownView: View {
 
             ScrollView {
                 VStack(spacing: 20) {
-                    if hasMonthlyData {
-                        // YTD Summary
-                        let ytdAssets = data.reduce(0) { $0 + $1.assets }
-                        let ytdLiabilities = data.reduce(0) { $0 + $1.liabilities }
-                        let ytdNetWorth = ytdAssets - ytdLiabilities
-
+                    if let latest {
+                        // Latest balances. Balances aren't added up across months: each month
+                        // already includes every account at its latest amount.
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Year-to-Date Summary")
+                            Text("Latest Balances")
                                 .font(.headline)
                                 .foregroundStyle(Theme.textPrimary)
+
+                            Text("As of \(Calendar.current.monthSymbols[latest.month - 1])")
+                                .font(.caption)
+                                .foregroundStyle(Theme.textSecondary)
 
                             HStack {
                                 VStack(alignment: .leading) {
                                     Text("Total Assets")
                                         .font(.caption)
                                         .foregroundStyle(Theme.textSecondary)
-                                    Text(ytdAssets, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
+                                    Text(latest.assets, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
                                         .bold()
                                         .foregroundStyle(Theme.positiveAmount)
                                 }
@@ -563,7 +565,7 @@ struct MonthlyBreakdownView: View {
                                     Text("Total Liabilities")
                                         .font(.caption)
                                         .foregroundStyle(Theme.textSecondary)
-                                    Text(ytdLiabilities, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
+                                    Text(latest.liabilities, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
                                         .bold()
                                         .foregroundStyle(Theme.negativeAmount)
                                 }
@@ -572,13 +574,13 @@ struct MonthlyBreakdownView: View {
                             Divider().background(Color.white.opacity(0.3))
 
                             HStack {
-                                Text("Net Worth (Monthly)")
+                                Text("Net Worth")
                                     .font(.caption)
                                     .foregroundStyle(Theme.textSecondary)
                                 Spacer()
-                                Text(ytdNetWorth, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
+                                Text(latest.netWorth, format: .currency(code: viewModel.currencyCode).precision(.fractionLength(0)))
                                     .bold()
-                                    .foregroundStyle(ytdNetWorth >= 0 ? Theme.positiveAmount : Theme.negativeAmount)
+                                    .foregroundStyle(latest.netWorth >= 0 ? Theme.positiveAmount : Theme.negativeAmount)
                             }
                         }
                         .padding()
@@ -591,7 +593,7 @@ struct MonthlyBreakdownView: View {
                                 .font(.headline)
                                 .foregroundStyle(Theme.textPrimary)
 
-                            let chartData = data.filter { $0.assets > 0 || $0.liabilities > 0 }
+                            let chartData = data.filter(\.hasEntries)
                             if !chartData.isEmpty {
                                 Chart(chartData, id: \.month) { item in
                                     LineMark(
@@ -636,7 +638,7 @@ struct MonthlyBreakdownView: View {
 
                         ForEach(data, id: \.month) { item in
                             let monthName = Calendar.current.monthSymbols[item.month - 1]
-                            let hasData = item.assets > 0 || item.liabilities > 0
+                            let hasData = item.hasEntries
 
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack {

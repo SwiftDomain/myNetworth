@@ -14,7 +14,7 @@ import Testing
 @Suite("Accounts that carry forward")
 struct CarryForwardTests {
 
-    @Test("A new year starts from the closest earlier year with yearly items")
+    @Test("A new year starts from the closest earlier year with items")
     func carryForwardSource() throws {
         let store = try TestStore()
         let viewModel = store.viewModel
@@ -22,37 +22,40 @@ struct CarryForwardTests {
         viewModel.addYear(2023)
         viewModel.addYear(2024)
         store.addItem("Savings", 1_000, year: 2022, category: "Cash", asset: true)
-        store.addItem("Savings", 2_000, year: 2023, category: "Cash", asset: true)
-        // 2024 only has a monthly entry, so there's nothing yearly to copy from it.
-        store.addItem("Bonus", 500, year: 2024, category: "Cash", asset: true, month: 4)
+        // 2023 is tracked but empty, and 2024 only has a monthly entry.
+        store.addItem("Savings", 2_000, year: 2024, category: "Cash", asset: true, month: 4)
 
-        #expect(viewModel.carryForwardSource(for: 2025) == 2023)
-        #expect(viewModel.carryForwardSource(for: 2023) == 2022)
+        #expect(viewModel.carryForwardSource(for: 2025) == 2024)
+        #expect(viewModel.carryForwardSource(for: 2024) == 2022)
         #expect(viewModel.carryForwardSource(for: 2022) == nil)
     }
 
-    @Test("Starting from a previous year copies its yearly items and amounts")
+    @Test("Starting from a previous year copies each account at its latest amount")
     func addYearCopiesItems() throws {
         let store = try TestStore()
         let viewModel = store.viewModel
         viewModel.addYear(2024)
         store.addItem("Savings", 5_000, year: 2024, category: "Cash", asset: true)
+        store.addItem("Savings", 6_000, year: 2024, category: "Cash", asset: true, month: 9)
         store.addItem("Visa", 1_200, year: 2024, category: "Credit Card", asset: false)
-        store.addItem("Bonus", 800, year: 2024, category: "Cash", asset: true, month: 6)
+        store.addItem("Brokerage", 800, year: 2024, category: "Investments", asset: true, month: 6)
 
         viewModel.addYear(2025, copyingItemsFrom: 2024)
 
-        let copies = viewModel.yearlyItems(in: 2025).sorted { $0.name < $1.name }
-        #expect(copies.map(\.name) == ["Savings", "Visa"])
-        #expect(copies.map(\.amount) == [5_000, 1_200])
-        #expect(copies.map(\.category) == ["Cash", "Credit Card"])
-        #expect(copies.map(\.itemType) == ["asset", "liability"])
-        #expect(viewModel.getYearData(for: 2025).netWorth == 3_800)
+        let copies = viewModel.latestEntries(in: 2025).sorted { $0.name < $1.name }
+        #expect(copies.map(\.name) == ["Brokerage", "Savings", "Visa"])
+        #expect(copies.map(\.amount) == [800, 6_000, 1_200])
+        #expect(copies.map(\.category) == ["Investments", "Cash", "Credit Card"])
+        #expect(copies.map(\.itemType) == ["asset", "asset", "liability"])
+        // Copies start the year as yearly amounts, ready for Update Balances.
+        #expect(copies.allSatisfy { $0.month == 0 })
+        #expect(viewModel.yearlyItems(in: 2025).count == 3)
+        #expect(viewModel.getYearData(for: 2025).netWorth == 5_600)
         #expect(viewModel.years == [2025, 2024])
 
         // The copies are new items; the year they came from is unchanged.
-        let originals = viewModel.yearlyItems(in: 2024)
-        #expect(originals.count == 2)
+        let originals = (viewModel.assets + viewModel.liabilities).filter { $0.year == 2024 }
+        #expect(originals.count == 4)
         #expect(Set(copies.map(\.id)).isDisjoint(with: originals.map(\.id)))
     }
 

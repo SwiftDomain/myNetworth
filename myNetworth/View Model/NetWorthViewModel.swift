@@ -58,12 +58,10 @@ class NetWorthViewModel {
         return ((try? modelContext.fetch(descriptor)) ?? []).map(\.year)
     }
 
-    /// The largest tracked year that is not in the future (≤ the current
-    /// calendar year), used as the "current" snapshot of debts. `years` is
-    /// already sorted descending, so the first match is the largest.
+    /// The year the debt planner reads debts from: the latest year, not in the future, that
+    /// has items, so a new year that hasn't been filled in yet doesn't empty the plan.
     var currentDebtYear: Int? {
-        let currentYear = Calendar.current.component(.year, from: .now)
-        return years.first { $0 <= currentYear }
+        latestYearWithData
     }
 
     // MARK: - Debt Payoff Planner
@@ -79,8 +77,8 @@ class NetWorthViewModel {
     /// Debts in the current snapshot year, largest first.
     var currentDebts: [FinancialItem] {
         guard let year = currentDebtYear else { return [] }
-        return liabilities
-            .filter { $0.year == year && $0.amount > 0 }
+        return latestEntries(in: year)
+            .filter { $0.itemType == "liability" && $0.amount > 0 }
             .sorted { $0.amount > $1.amount }
     }
 
@@ -166,9 +164,15 @@ class NetWorthViewModel {
         years.sorted().map { getYearData(for: $0) }
     }
 
+    /// The entries that make up each account's balance in `year`. See `latestEntries(throughMonth:)`.
+    func latestEntries(in year: Int) -> [FinancialItem] {
+        (assets + liabilities).filter { $0.year == year }.latestEntries()
+    }
+
     func getYearData(for year: Int) -> YearlyData {
-        let yearAssets = assets.filter { $0.year == year }
-        let yearLiabilities = liabilities.filter { $0.year == year }
+        let entries = latestEntries(in: year)
+        let yearAssets = entries.filter { $0.itemType == "asset" }
+        let yearLiabilities = entries.filter { $0.itemType == "liability" }
 
         let totalAssets = yearAssets.reduce(0) { $0 + $1.amount }
         let totalLiabilities = yearLiabilities.reduce(0) { $0 + $1.amount }
@@ -205,13 +209,19 @@ class NetWorthViewModel {
 
     // MARK: - Monthly Data
 
-    func monthlyData(for year: Int) -> [(month: Int, assets: Int, liabilities: Int, netWorth: Int)] {
-        (1...12).map { month in
-            let monthAssets = assets.filter { $0.year == year && $0.month == month }
-                .reduce(0) { $0 + $1.amount }
-            let monthLiabilities = liabilities.filter { $0.year == year && $0.month == month }
-                .reduce(0) { $0 + $1.amount }
-            return (month, monthAssets, monthLiabilities, monthAssets - monthLiabilities)
+    /// Balances at the end of each month: every account at its latest amount so far, with
+    /// yearly amounts counting until a monthly entry replaces them.
+    func monthlyData(for year: Int) -> [MonthlyBalance] {
+        let yearItems = (assets + liabilities).filter { $0.year == year }
+        let monthsWithEntries = Set(yearItems.map(\.month))
+        return (1...12).map { month in
+            let entries = yearItems.latestEntries(throughMonth: month)
+            return MonthlyBalance(
+                month: month,
+                assets: entries.filter { $0.itemType == "asset" }.reduce(0) { $0 + $1.amount },
+                liabilities: entries.filter { $0.itemType == "liability" }.reduce(0) { $0 + $1.amount },
+                hasEntries: monthsWithEntries.contains(month)
+            )
         }
     }
 
@@ -241,9 +251,7 @@ class NetWorthViewModel {
     // MARK: - Category Data
 
     func getCategoryData(for type: ItemType, year: Int) -> [(String, Int)] {
-        let items = type == .asset
-            ? assets.filter { $0.year == year }
-            : liabilities.filter { $0.year == year }
+        let items = latestEntries(in: year).filter { $0.itemType == type.rawValue }
 
         var categories: [String: Int] = [:]
         for item in items {
@@ -255,25 +263,26 @@ class NetWorthViewModel {
 
     // MARK: - CRUD: Years
 
-    /// Items recorded for the whole year rather than for a specific month.
+    /// Items recorded for the whole year, for Update Balances. Accounts that also have monthly
+    /// entries are left out: their latest monthly entry is their balance, so changing the
+    /// yearly amount wouldn't change anything.
     func yearlyItems(in year: Int) -> [FinancialItem] {
-        (assets + liabilities).filter { $0.year == year && $0.month == 0 }
+        latestEntries(in: year).filter { $0.month == 0 }
     }
 
-    /// The closest earlier year that has yearly items, which a new year can start from.
+    /// The closest earlier year that has items, which a new year can start from.
     func carryForwardSource(for year: Int) -> Int? {
-        let yearsWithYearlyItems = Set((assets + liabilities).filter { $0.month == 0 }.map(\.year))
-        // `years` is sorted newest first, so the first match is the closest earlier year.
-        return years.first { $0 < year && yearsWithYearlyItems.contains($0) }
+        // `yearsWithData` is sorted newest first, so the first match is the closest earlier year.
+        yearsWithData.first { $0 < year }
     }
 
-    /// Adds a year, optionally starting it with a copy of another year's yearly items
-    /// (amounts included) so they don't have to be typed in again.
+    /// Adds a year, optionally starting it with each of another year's accounts at its latest
+    /// amount, as yearly items, so they don't have to be typed in again.
     func addYear(_ year: Int, copyingItemsFrom sourceYear: Int? = nil) {
         guard !years.contains(year) else { return }
         modelContext.insert(TrackedYear(year: year))
         if let sourceYear {
-            for item in yearlyItems(in: sourceYear) {
+            for item in latestEntries(in: sourceYear) {
                 let copy = FinancialItem(
                     name: item.name,
                     amount: item.amount,
@@ -513,17 +522,19 @@ class NetWorthViewModel {
 
     // MARK: - Insights
 
-    /// Every item as plain values for `InsightsEngine`.
+    /// The entries behind each year's balances as plain values for `InsightsEngine`.
     var insightItems: [InsightItem] {
-        (assets + liabilities).map { item in
-            InsightItem(
-                name: item.name,
-                category: item.category,
-                isAsset: item.itemType == "asset",
-                amount: item.amount,
-                year: item.year
-            )
-        }
+        Dictionary(grouping: assets + liabilities, by: \.year).values
+            .flatMap { $0.latestEntries() }
+            .map { item in
+                InsightItem(
+                    name: item.name,
+                    category: item.category,
+                    isAsset: item.itemType == "asset",
+                    amount: item.amount,
+                    year: item.year
+                )
+            }
     }
 
     // MARK: - Export
