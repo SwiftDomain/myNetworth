@@ -81,15 +81,25 @@ struct NetWorthWidgetEntryView: View {
     let entry: NetWorthEntry
 
     var body: some View {
-        if let snapshot = entry.snapshot {
-            switch family {
-            case .systemMedium:
+        switch family {
+        case .accessoryInline:
+            InlineNetWorthView(snapshot: entry.snapshot, currencyCode: entry.currencyCode)
+        case .accessoryCircular:
+            CircularNetWorthView(snapshot: entry.snapshot, currencyCode: entry.currencyCode)
+        case .accessoryRectangular:
+            RectangularNetWorthView(snapshot: entry.snapshot, currencyCode: entry.currencyCode)
+        case .systemMedium:
+            if let snapshot = entry.snapshot {
                 MediumNetWorthView(snapshot: snapshot, currencyCode: entry.currencyCode)
-            default:
-                SmallNetWorthView(snapshot: snapshot, currencyCode: entry.currencyCode)
+            } else {
+                EmptyNetWorthView()
             }
-        } else {
-            EmptyNetWorthView()
+        default:
+            if let snapshot = entry.snapshot {
+                SmallNetWorthView(snapshot: snapshot, currencyCode: entry.currencyCode)
+            } else {
+                EmptyNetWorthView()
+            }
         }
     }
 }
@@ -229,6 +239,103 @@ struct MediumNetWorthView: View {
     }
 }
 
+// MARK: - Lock Screen Views
+
+// The Lock Screen draws these in a single tint, so they rely on layout rather than color.
+// Amounts are privacy-sensitive, so they stay hidden until Face ID unlocks the phone.
+
+/// One line above the clock: "Net worth $250K".
+struct InlineNetWorthView: View {
+    let snapshot: WidgetSnapshot?
+    let currencyCode: String
+
+    var body: some View {
+        Group {
+            if let snapshot {
+                Label {
+                    Text("Net worth \(snapshot.netWorth, format: .currency(code: currencyCode).notation(.compactName))")
+                        .privacySensitive()
+                } icon: {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                }
+            } else {
+                Label("myNetworth", systemImage: "chart.line.uptrend.xyaxis")
+            }
+        }
+        .containerBackground(.clear, for: .widget)
+    }
+}
+
+/// A round slot under the clock: the direction of the change and the net worth, shortened.
+struct CircularNetWorthView: View {
+    let snapshot: WidgetSnapshot?
+    let currencyCode: String
+
+    private var icon: String {
+        guard let change = snapshot?.percentageChange else { return "chart.line.uptrend.xyaxis" }
+        return change >= 0 ? "arrow.up.right" : "arrow.down.right"
+    }
+
+    var body: some View {
+        ZStack {
+            AccessoryWidgetBackground()
+
+            VStack(spacing: 1) {
+                Image(systemName: icon)
+                    .font(.caption)
+
+                if let snapshot {
+                    Text(snapshot.netWorth, format: .currency(code: currencyCode).notation(.compactName))
+                        .font(.system(.caption, design: .rounded))
+                        .bold()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+                        .privacySensitive()
+                }
+            }
+            .padding(4)
+        }
+        .containerBackground(.clear, for: .widget)
+    }
+}
+
+/// A wider slot under the clock: net worth and the change since the previous year.
+struct RectangularNetWorthView: View {
+    let snapshot: WidgetSnapshot?
+    let currencyCode: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Label("Net Worth", systemImage: "chart.line.uptrend.xyaxis")
+                .font(.caption)
+                .widgetAccentable()
+
+            if let snapshot {
+                Text(snapshot.netWorth, format: .currency(code: currencyCode).precision(.fractionLength(0)))
+                    .font(.headline)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .privacySensitive()
+
+                if let change = snapshot.percentageChange, let previousYear = snapshot.previousYear {
+                    Text("\(change >= 0 ? "Up" : "Down") \(abs(change), format: .number.precision(.fractionLength(1)))% since \(String(previousYear))")
+                        .font(.caption)
+                        .lineLimit(1)
+                } else {
+                    Text(String(snapshot.year))
+                        .font(.caption)
+                }
+            } else {
+                Text("Add your accounts in myNetworth")
+                    .font(.caption)
+                    .lineLimit(2)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .containerBackground(.clear, for: .widget)
+    }
+}
+
 // MARK: - Widget
 
 struct NetWorthWidget: Widget {
@@ -240,7 +347,10 @@ struct NetWorthWidget: Widget {
         }
         .configurationDisplayName("Net Worth")
         .description("Track your current net worth at a glance.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .supportedFamilies([
+            .systemSmall, .systemMedium,
+            .accessoryInline, .accessoryCircular, .accessoryRectangular,
+        ])
     }
 }
 
@@ -263,6 +373,25 @@ struct NetWorthWidgetBundle: WidgetBundle {
 }
 
 #Preview("Medium Widget", as: .systemMedium) {
+    NetWorthWidget()
+} timeline: {
+    NetWorthEntry(date: .now, snapshot: .sample, currencyCode: "USD")
+}
+
+#Preview("Lock Screen", as: .accessoryRectangular) {
+    NetWorthWidget()
+} timeline: {
+    NetWorthEntry(date: .now, snapshot: .sample, currencyCode: "USD")
+    NetWorthEntry(date: .now, snapshot: nil, currencyCode: "USD")
+}
+
+#Preview("Lock Screen Circular", as: .accessoryCircular) {
+    NetWorthWidget()
+} timeline: {
+    NetWorthEntry(date: .now, snapshot: .sample, currencyCode: "USD")
+}
+
+#Preview("Lock Screen Inline", as: .accessoryInline) {
     NetWorthWidget()
 } timeline: {
     NetWorthEntry(date: .now, snapshot: .sample, currencyCode: "USD")
