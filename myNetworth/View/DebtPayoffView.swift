@@ -108,19 +108,47 @@ struct DebtPayoffView: View {
         .clipShape(.rect(cornerRadius: 12))
     }
 
+    /// Opens the first debt in the plan that's missing its rate and minimum.
     private var missingTermsNotice: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.orange)
+        let nextDebt = viewModel.currentDebts.first { viewModel.isIncludedInPlan($0) && !hasTerms($0) }
 
-            Text("Some debts have no interest rate or minimum payment yet, so they count as 0% with no minimum. Tap a debt below to add them.")
-                .font(.subheadline)
-                .foregroundStyle(Theme.textSecondary)
+        return Button {
+            debtBeingEdited = nextDebt
+        } label: {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Some debts have no interest rate or minimum payment yet, so they count as 0% with no minimum.")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.textSecondary)
+
+                    if let nextDebt {
+                        HStack(spacing: 4) {
+                            Text("Add the rate for \(nextDebt.name)")
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.bold))
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.orange)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+            .background(Color.orange.opacity(0.15))
+            .clipShape(.rect(cornerRadius: 12))
+            .contentShape(.rect)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(Color.orange.opacity(0.15))
-        .clipShape(.rect(cornerRadius: 12))
+        .buttonStyle(PressableCardStyle())
+        .disabled(nextDebt == nil)
+    }
+
+    /// Whether a debt has an interest rate or minimum payment saved.
+    private func hasTerms(_ debt: FinancialItem) -> Bool {
+        guard let saved = viewModel.terms(for: debt) else { return false }
+        return saved.annualRate > 0 || saved.minimumPayment > 0
     }
 
     private var extraPaymentCard: some View {
@@ -308,18 +336,18 @@ struct DebtPayoffView: View {
                 .font(.headline)
                 .foregroundStyle(Theme.textPrimary)
 
-            Text("Tap a debt to set its interest rate and minimum payment. Use the switch to leave a debt out of the plan.")
+            Text("Tap a debt to set its interest rate and minimum payment. Turn off In plan to leave a debt out.")
                 .font(.caption)
                 .foregroundStyle(Theme.textSecondary)
 
             ForEach(viewModel.currentDebts) { debt in
-                let saved = viewModel.terms(for: debt)
                 let isIncluded = viewModel.isIncludedInPlan(debt)
 
-                HStack(spacing: 12) {
-                    Button {
-                        debtBeingEdited = debt
-                    } label: {
+                // The whole card opens the debt's terms; the switch sits on top of it.
+                Button {
+                    debtBeingEdited = debt
+                } label: {
+                    VStack(alignment: .leading, spacing: 12) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(debt.name)
                                 .font(.headline)
@@ -329,35 +357,71 @@ struct DebtPayoffView: View {
                                 .font(.subheadline)
                                 .foregroundStyle(Theme.negativeAmount)
                                 .privacySensitive()
-
-                            if let saved, saved.annualRate > 0 || saved.minimumPayment > 0 {
-                                Text("\(saved.annualRate, format: .number.precision(.fractionLength(0...2)))% APR · \(saved.minimumPayment, format: currency) minimum")
-                                    .font(.caption)
-                                    .foregroundStyle(Theme.textSecondary)
-                                    .privacySensitive()
-                            } else {
-                                Label("Add rate and minimum", systemImage: "plus.circle")
-                                    .font(.caption)
-                                    .foregroundStyle(.orange)
-                            }
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(.rect)
-                    }
-                    .buttonStyle(.plain)
+                        // Leaves room for the switch.
+                        .padding(.trailing, 80)
 
-                    Toggle("Include \(debt.name) in the plan", isOn: Binding(
-                        get: { isIncluded },
-                        set: { viewModel.setIncludedInPlan($0, for: debt) }
-                    ))
-                    .labelsHidden()
-                    .tint(.blue)
+                        termsLabel(for: debt)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
+                    .contentShape(.rect)
                 }
-                .padding()
+                .buttonStyle(PressableCardStyle())
+                .accessibilityHint("Opens the interest rate and minimum payment")
+                .overlay(alignment: .topTrailing) {
+                    VStack(spacing: 4) {
+                        Toggle("Include \(debt.name) in the plan", isOn: Binding(
+                            get: { isIncluded },
+                            set: { viewModel.setIncludedInPlan($0, for: debt) }
+                        ))
+                        .labelsHidden()
+                        .tint(.blue)
+
+                        Text("In plan")
+                            .font(.caption2)
+                            .foregroundStyle(Theme.textSecondary)
+                            .accessibilityHidden(true)
+                    }
+                    .padding()
+                }
                 .background(Theme.cardBackground)
                 .clipShape(.rect(cornerRadius: 12))
                 .opacity(isIncluded ? 1 : 0.6)
             }
+        }
+    }
+
+    /// A debt's saved terms with an Edit link, or a button-shaped prompt to add them.
+    @ViewBuilder
+    private func termsLabel(for debt: FinancialItem) -> some View {
+        if let saved = viewModel.terms(for: debt), hasTerms(debt) {
+            HStack {
+                Text("\(saved.annualRate, format: .number.precision(.fractionLength(0...2)))% APR · \(saved.minimumPayment, format: currency) minimum")
+                    .font(.caption)
+                    .foregroundStyle(Theme.textSecondary)
+                    .privacySensitive()
+
+                Spacer(minLength: 8)
+
+                HStack(spacing: 2) {
+                    Text("Edit")
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.link)
+            }
+        } else {
+            Label("Add interest rate & minimum", systemImage: "plus.circle.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.orange)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(Color.orange.opacity(0.15), in: Capsule())
+                .overlay {
+                    Capsule().strokeBorder(Color.orange.opacity(0.5))
+                }
         }
     }
 
@@ -483,5 +547,16 @@ struct DebtTermsEditor: View {
                 configurations: ModelConfiguration(isStoredInMemoryOnly: true)
             ).mainContext)
         )
+    }
+}
+
+// MARK: - Pressable Card
+
+/// Dims a card while it's pressed, so a tap visibly lands.
+private struct PressableCardStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.6 : 1)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }

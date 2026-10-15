@@ -21,6 +21,8 @@ enum Theme {
     static let positiveAmount = Color.green
     static let negativeAmount = Color.red
     static let accent = Color.accentColor
+    /// Links on the dark cards, light enough to read on the blue background.
+    static let link = Color(red: 0.45, green: 0.75, blue: 1.0)
     static let textPrimary = Color.white
     static let textSecondary = Color.white.opacity(0.7)
     static let cardBackground = Color.white.opacity(0.1)
