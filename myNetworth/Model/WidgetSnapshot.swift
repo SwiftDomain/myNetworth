@@ -5,12 +5,20 @@
 
 import Foundation
 
-/// What the Home Screen widget shows: the latest year with data, its totals, and the change
-/// since the previous year with data.
+/// What the widgets show: the latest year with data, its totals, the change since the previous
+/// year with data, and net worth over the years.
 ///
 /// This file is a member of both the app and the widget extension, so the app's tests can
 /// check the widget's numbers.
 struct WidgetSnapshot: Equatable {
+    /// One year's net worth, for the trend graph.
+    struct YearPoint: Equatable, Identifiable {
+        let year: Int
+        let netWorth: Int
+
+        var id: Int { year }
+    }
+
     let year: Int
     let assets: Int
     let liabilities: Int
@@ -18,6 +26,8 @@ struct WidgetSnapshot: Equatable {
     let previousYear: Int?
     /// The change in net worth since `previousYear`, as a percentage.
     let percentageChange: Double?
+    /// Net worth for every year with data up to `year`, oldest first.
+    let trend: [YearPoint]
 
     var netWorth: Int { assets - liabilities }
 
@@ -29,23 +39,24 @@ struct WidgetSnapshot: Equatable {
         guard let year = yearsWithData.last else { return nil }
 
         let current = totals(of: items, in: year)
-        let previousYear = yearsWithData.dropLast().last
+        let trend = yearsWithData.map { pointYear in
+            let yearTotals = totals(of: items, in: pointYear)
+            return YearPoint(year: pointYear, netWorth: yearTotals.assets - yearTotals.liabilities)
+        }
+        let previous = trend.dropLast().last
         var percentageChange: Double?
-        if let previousYear {
-            let previous = totals(of: items, in: previousYear)
-            let previousNetWorth = previous.assets - previous.liabilities
-            if previousNetWorth != 0 {
-                let change = (current.assets - current.liabilities) - previousNetWorth
-                percentageChange = Double(change) / Double(abs(previousNetWorth)) * 100
-            }
+        if let previous, previous.netWorth != 0 {
+            let change = (current.assets - current.liabilities) - previous.netWorth
+            percentageChange = Double(change) / Double(abs(previous.netWorth)) * 100
         }
 
         return WidgetSnapshot(
             year: year,
             assets: current.assets,
             liabilities: current.liabilities,
-            previousYear: previousYear,
-            percentageChange: percentageChange
+            previousYear: previous?.year,
+            percentageChange: percentageChange,
+            trend: trend
         )
     }
 

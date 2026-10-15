@@ -42,6 +42,27 @@ struct WidgetTests {
         // Compared with the previous year that has data, skipping the gap.
         #expect(snapshot.previousYear == thisYear - 3)
         #expect(snapshot.percentageChange == 0)
+        #expect(snapshot.trend.map(\.year) == [thisYear - 3, thisYear - 1])
+    }
+
+    @Test("The trend has each year's net worth up to the latest, oldest first")
+    func trend() throws {
+        let items = [
+            item("Savings", 30_000, year: thisYear),
+            item("Savings", 20_000, year: thisYear - 2),
+            item("Visa", 5_000, year: thisYear - 2, asset: false),
+            item("Savings", 22_000, year: thisYear - 1),
+            // A monthly update counts once, at the latest amount.
+            item("Savings", 25_000, year: thisYear - 1, month: 9),
+            // A planning year isn't part of the trend.
+            item("Savings", 90_000, year: thisYear + 1),
+        ]
+
+        let snapshot = try #require(WidgetSnapshot.make(from: items))
+
+        #expect(snapshot.trend.map(\.year) == [thisYear - 2, thisYear - 1, thisYear])
+        #expect(snapshot.trend.map(\.netWorth) == [15_000, 25_000, 30_000])
+        #expect(snapshot.trend.last?.netWorth == snapshot.netWorth)
     }
 
     @Test("Percentage change since the previous year")

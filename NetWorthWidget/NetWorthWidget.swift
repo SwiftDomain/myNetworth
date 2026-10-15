@@ -8,6 +8,7 @@
 import WidgetKit
 import SwiftUI
 import SwiftData
+import Charts
 
 // MARK: - Widget Entry
 
@@ -65,13 +66,20 @@ struct NetWorthProvider: TimelineProvider {
 }
 
 extension WidgetSnapshot {
-    static let sample = WidgetSnapshot(
-        year: Calendar.current.component(.year, from: .now),
-        assets: 350_000,
-        liabilities: 100_000,
-        previousYear: Calendar.current.component(.year, from: .now) - 1,
-        percentageChange: 5.2
-    )
+    static let sample: WidgetSnapshot = {
+        let thisYear = Calendar.current.component(.year, from: .now)
+        let netWorths = [150_000, 172_000, 165_000, 210_000, 237_600, 250_000]
+        return WidgetSnapshot(
+            year: thisYear,
+            assets: 350_000,
+            liabilities: 100_000,
+            previousYear: thisYear - 1,
+            percentageChange: 5.2,
+            trend: netWorths.enumerated().map { offset, netWorth in
+                YearPoint(year: thisYear - netWorths.count + 1 + offset, netWorth: netWorth)
+            }
+        )
+    }()
 }
 
 // MARK: - Widget Entry View
@@ -336,6 +344,146 @@ struct RectangularNetWorthView: View {
     }
 }
 
+// MARK: - Trend Views
+
+/// Net worth over the years, like the Net Worth Over Time chart in Analysis.
+struct TrendChart: View {
+    let points: [WidgetSnapshot.YearPoint]
+    var showsYears = false
+
+    var body: some View {
+        Chart(points) { point in
+            LineMark(
+                x: .value("Year", String(point.year)),
+                y: .value("Net Worth", point.netWorth)
+            )
+            .interpolationMethod(.monotone)
+            .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round))
+
+            if point.id == points.last?.id {
+                PointMark(
+                    x: .value("Year", String(point.year)),
+                    y: .value("Net Worth", point.netWorth)
+                )
+                .symbolSize(30)
+            }
+        }
+        // Start the scale at the lowest value rather than zero, so changes are visible.
+        .chartYScale(domain: .automatic(includesZero: false))
+        .chartYAxis(.hidden)
+        .chartXAxis {
+            AxisMarks(values: axisYears) { _ in
+                AxisValueLabel()
+            }
+        }
+    }
+
+    /// The first and last years, when years are shown.
+    private var axisYears: [String] {
+        guard showsYears, let first = points.first, let last = points.last else { return [] }
+        return [String(first.year), String(last.year)]
+    }
+}
+
+/// The Lock Screen's widest size: net worth and its trend.
+struct RectangularTrendView: View {
+    let snapshot: WidgetSnapshot?
+    let currencyCode: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(alignment: .firstTextBaseline) {
+                Label("Net Worth", systemImage: "chart.line.uptrend.xyaxis")
+                    .font(.caption2)
+                    .widgetAccentable()
+
+                Spacer(minLength: 4)
+
+                if let snapshot {
+                    Text(snapshot.netWorth, format: .currency(code: currencyCode).notation(.compactName))
+                        .font(.caption)
+                        .bold()
+                        .privacySensitive()
+                }
+            }
+
+            if let snapshot, snapshot.trend.count >= 2 {
+                TrendChart(points: snapshot.trend)
+            } else {
+                Text(snapshot == nil ? "Add your accounts in myNetworth" : "Your trend appears once two years have data")
+                    .font(.caption2)
+                    .lineLimit(2)
+                Spacer(minLength: 0)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .containerBackground(.clear, for: .widget)
+    }
+}
+
+/// The full-width Home Screen size: net worth, the change since the first year, and the trend.
+struct MediumTrendView: View {
+    let snapshot: WidgetSnapshot?
+    let currencyCode: String
+
+    private var currency: IntegerFormatStyle<Int>.Currency {
+        .currency(code: currencyCode).precision(.fractionLength(0))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Label("Net Worth Over Time", systemImage: "chart.line.uptrend.xyaxis")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                if let snapshot {
+                    Text(snapshot.netWorth, format: currency)
+                        .font(.headline)
+                        .foregroundStyle(snapshot.netWorth >= 0 ? .green : .red)
+                        .privacySensitive()
+                }
+            }
+
+            if let snapshot, let first = snapshot.trend.first, snapshot.trend.count >= 2 {
+                let change = snapshot.netWorth - first.netWorth
+                Text("\(change >= 0 ? "+" : "−")\(abs(change), format: currency) since \(String(first.year))")
+                    .font(.caption)
+                    .foregroundStyle(change >= 0 ? .green : .red)
+                    .privacySensitive()
+
+                TrendChart(points: snapshot.trend, showsYears: true)
+                    .foregroundStyle(.blue)
+            } else {
+                Spacer()
+                Text(snapshot == nil
+                    ? "Add your accounts in myNetworth to see your net worth over time."
+                    : "Your trend appears once two years have data.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+        }
+        .containerBackground(.fill.tertiary, for: .widget)
+    }
+}
+
+struct NetWorthTrendEntryView: View {
+    @Environment(\.widgetFamily) var family
+    let entry: NetWorthEntry
+
+    var body: some View {
+        switch family {
+        case .accessoryRectangular:
+            RectangularTrendView(snapshot: entry.snapshot, currencyCode: entry.currencyCode)
+        default:
+            MediumTrendView(snapshot: entry.snapshot, currencyCode: entry.currencyCode)
+        }
+    }
+}
+
 // MARK: - Widget
 
 struct NetWorthWidget: Widget {
@@ -354,12 +502,27 @@ struct NetWorthWidget: Widget {
     }
 }
 
+/// Net worth over the years: the Lock Screen's widest size and full width on the Home Screen.
+struct NetWorthTrendWidget: Widget {
+    let kind = "NetWorthTrendWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: NetWorthProvider()) { entry in
+            NetWorthTrendEntryView(entry: entry)
+        }
+        .configurationDisplayName("Net Worth Trend")
+        .description("Your net worth over the years, from Analysis.")
+        .supportedFamilies([.accessoryRectangular, .systemMedium])
+    }
+}
+
 // MARK: - Widget Bundle
 
 @main
 struct NetWorthWidgetBundle: WidgetBundle {
     var body: some Widget {
         NetWorthWidget()
+        NetWorthTrendWidget()
     }
 }
 
@@ -393,6 +556,19 @@ struct NetWorthWidgetBundle: WidgetBundle {
 
 #Preview("Lock Screen Inline", as: .accessoryInline) {
     NetWorthWidget()
+} timeline: {
+    NetWorthEntry(date: .now, snapshot: .sample, currencyCode: "USD")
+}
+
+#Preview("Trend, Lock Screen", as: .accessoryRectangular) {
+    NetWorthTrendWidget()
+} timeline: {
+    NetWorthEntry(date: .now, snapshot: .sample, currencyCode: "USD")
+    NetWorthEntry(date: .now, snapshot: nil, currencyCode: "USD")
+}
+
+#Preview("Trend, Home Screen", as: .systemMedium) {
+    NetWorthTrendWidget()
 } timeline: {
     NetWorthEntry(date: .now, snapshot: .sample, currencyCode: "USD")
 }
