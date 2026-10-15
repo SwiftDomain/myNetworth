@@ -13,12 +13,9 @@ import SwiftData
 
 struct NetWorthEntry: TimelineEntry {
     let date: Date
-    let netWorth: Int
-    let assets: Int
-    let liabilities: Int
-    let percentageChange: Double?
+    /// Nil until the app has numbers to show.
+    let snapshot: WidgetSnapshot?
     let currencyCode: String
-    let year: Int
 }
 
 // MARK: - Timeline Provider
@@ -26,37 +23,19 @@ struct NetWorthEntry: TimelineEntry {
 struct NetWorthProvider: TimelineProvider {
 
     func placeholder(in context: Context) -> NetWorthEntry {
-        NetWorthEntry(
-            date: .now,
-            netWorth: 250_000,
-            assets: 350_000,
-            liabilities: 100_000,
-            percentageChange: 5.2,
-            currencyCode: "USD",
-            year: Calendar.current.component(.year, from: .now)
-        )
+        NetWorthEntry(date: .now, snapshot: .sample, currencyCode: "USD")
     }
 
     func getSnapshot(in context: Context, completion: @escaping (NetWorthEntry) -> Void) {
-        completion(fetchCurrentEntry())
+        // The widget gallery shows sample numbers rather than the user's own.
+        completion(context.isPreview ? placeholder(in: context) : fetchCurrentEntry())
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<NetWorthEntry>) -> Void) {
+        // The app reloads the widget whenever its data changes; this is a fallback.
         let entry = fetchCurrentEntry()
         let nextUpdate = Calendar.current.date(byAdding: .hour, value: 1, to: .now) ?? .now
         completion(Timeline(entries: [entry], policy: .after(nextUpdate)))
-    }
-
-    private func emptyEntry() -> NetWorthEntry {
-        NetWorthEntry(
-            date: .now,
-            netWorth: 0,
-            assets: 0,
-            liabilities: 0,
-            percentageChange: nil,
-            currencyCode: "USD",
-            year: Calendar.current.component(.year, from: .now)
-        )
     }
 
     private func fetchCurrentEntry() -> NetWorthEntry {
@@ -64,54 +43,35 @@ struct NetWorthProvider: TimelineProvider {
         // an empty store, and the app would then skip copying the user's existing data into it.
         guard let storeURL = SharedStore.groupStoreURL,
               FileManager.default.fileExists(atPath: storeURL.path(percentEncoded: false)) else {
-            return emptyEntry()
+            return NetWorthEntry(date: .now, snapshot: nil, currencyCode: "USD")
         }
 
         let schema = SharedStore.schema
         let config = ModelConfiguration(schema: schema, url: storeURL, cloudKitDatabase: .none)
-
         guard let container = try? ModelContainer(for: schema, configurations: [config]) else {
-            return emptyEntry()
+            return NetWorthEntry(date: .now, snapshot: nil, currencyCode: "USD")
         }
 
         let context = ModelContext(container)
-        let currentYear = Calendar.current.component(.year, from: .now)
-
-        // Fetch currency
-        let settingsDescriptor = FetchDescriptor<UserSettings>()
-        let currencyCode = (try? context.fetch(settingsDescriptor))?.first?.currencyCode ?? "USD"
-
-        // Fetch all items and filter in memory (simpler for widget context)
-        let itemDescriptor = FetchDescriptor<FinancialItem>()
-        let allItems = (try? context.fetch(itemDescriptor)) ?? []
-
-        // Each account counts once, at its latest entry, as in the app.
-        let yearItems = allItems.filter { $0.year == currentYear }.latestEntries()
-        let totalAssets = yearItems.filter { $0.itemType == "asset" }.reduce(0) { $0 + $1.amount }
-        let totalLiabilities = yearItems.filter { $0.itemType == "liability" }.reduce(0) { $0 + $1.amount }
-        let netWorth = totalAssets - totalLiabilities
-
-        // Previous year for percentage change
-        let previousYear = currentYear - 1
-        let prevItems = allItems.filter { $0.year == previousYear }.latestEntries()
-        let prevAssets = prevItems.filter { $0.itemType == "asset" }.reduce(0) { $0 + $1.amount }
-        let prevLiabilities = prevItems.filter { $0.itemType == "liability" }.reduce(0) { $0 + $1.amount }
-        let prevNetWorth = prevAssets - prevLiabilities
-
-        let percentageChange: Double? = prevNetWorth != 0
-            ? Double(netWorth - prevNetWorth) / Double(abs(prevNetWorth)) * 100
-            : nil
+        let currencyCode = (try? context.fetch(FetchDescriptor<UserSettings>()))?.first?.currencyCode ?? "USD"
+        let items = (try? context.fetch(FetchDescriptor<FinancialItem>())) ?? []
 
         return NetWorthEntry(
             date: .now,
-            netWorth: netWorth,
-            assets: totalAssets,
-            liabilities: totalLiabilities,
-            percentageChange: percentageChange,
-            currencyCode: currencyCode,
-            year: currentYear
+            snapshot: WidgetSnapshot.make(from: items),
+            currencyCode: currencyCode
         )
     }
+}
+
+extension WidgetSnapshot {
+    static let sample = WidgetSnapshot(
+        year: Calendar.current.component(.year, from: .now),
+        assets: 350_000,
+        liabilities: 100_000,
+        previousYear: Calendar.current.component(.year, from: .now) - 1,
+        percentageChange: 5.2
+    )
 }
 
 // MARK: - Widget Entry View
@@ -121,19 +81,43 @@ struct NetWorthWidgetEntryView: View {
     let entry: NetWorthEntry
 
     var body: some View {
-        switch family {
-        case .systemMedium:
-            MediumNetWorthView(entry: entry)
-        default:
-            SmallNetWorthView(entry: entry)
+        if let snapshot = entry.snapshot {
+            switch family {
+            case .systemMedium:
+                MediumNetWorthView(snapshot: snapshot, currencyCode: entry.currencyCode)
+            default:
+                SmallNetWorthView(snapshot: snapshot, currencyCode: entry.currencyCode)
+            }
+        } else {
+            EmptyNetWorthView()
         }
+    }
+}
+
+// MARK: - Empty Widget View
+
+struct EmptyNetWorthView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Image(systemName: "chart.line.uptrend.xyaxis")
+                .foregroundStyle(.blue)
+
+            Spacer()
+
+            Text("Add your accounts in myNetworth to see your net worth here.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .containerBackground(.fill.tertiary, for: .widget)
     }
 }
 
 // MARK: - Small Widget View
 
 struct SmallNetWorthView: View {
-    let entry: NetWorthEntry
+    let snapshot: WidgetSnapshot
+    let currencyCode: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -141,7 +125,7 @@ struct SmallNetWorthView: View {
                 Image(systemName: "chart.line.uptrend.xyaxis")
                     .foregroundStyle(.blue)
                 Spacer()
-                Text(String(entry.year))
+                Text(String(snapshot.year))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -152,13 +136,14 @@ struct SmallNetWorthView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            Text(entry.netWorth, format: .currency(code: entry.currencyCode).precision(.fractionLength(0)))
+            Text(snapshot.netWorth, format: .currency(code: currencyCode).precision(.fractionLength(0)))
                 .font(.title3)
                 .bold()
-                .foregroundStyle(entry.netWorth >= 0 ? .green : .red)
+                .foregroundStyle(snapshot.netWorth >= 0 ? .green : .red)
                 .minimumScaleFactor(0.5)
+                .privacySensitive()
 
-            if let change = entry.percentageChange {
+            if let change = snapshot.percentageChange {
                 HStack(spacing: 2) {
                     Image(systemName: change >= 0 ? "arrow.up.right" : "arrow.down.right")
                     Text(abs(change), format: .number.precision(.fractionLength(1)))
@@ -175,7 +160,8 @@ struct SmallNetWorthView: View {
 // MARK: - Medium Widget View
 
 struct MediumNetWorthView: View {
-    let entry: NetWorthEntry
+    let snapshot: WidgetSnapshot
+    let currencyCode: String
 
     var body: some View {
         HStack {
@@ -193,17 +179,18 @@ struct MediumNetWorthView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                Text(entry.netWorth, format: .currency(code: entry.currencyCode).precision(.fractionLength(0)))
+                Text(snapshot.netWorth, format: .currency(code: currencyCode).precision(.fractionLength(0)))
                     .font(.title2)
                     .bold()
-                    .foregroundStyle(entry.netWorth >= 0 ? .green : .red)
+                    .foregroundStyle(snapshot.netWorth >= 0 ? .green : .red)
                     .minimumScaleFactor(0.5)
+                    .privacySensitive()
 
-                if let change = entry.percentageChange {
+                if let change = snapshot.percentageChange, let previousYear = snapshot.previousYear {
                     HStack(spacing: 4) {
                         Image(systemName: change >= 0 ? "arrow.up.right" : "arrow.down.right")
                         Text(abs(change), format: .number.precision(.fractionLength(1)))
-                        Text("% vs last year")
+                        Text("% since \(String(previousYear))")
                     }
                     .font(.caption)
                     .foregroundStyle(change >= 0 ? .green : .red)
@@ -217,22 +204,24 @@ struct MediumNetWorthView: View {
                     Text("Assets")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
-                    Text(entry.assets, format: .currency(code: entry.currencyCode).precision(.fractionLength(0)))
+                    Text(snapshot.assets, format: .currency(code: currencyCode).precision(.fractionLength(0)))
                         .font(.subheadline)
                         .bold()
                         .foregroundStyle(.green)
                         .minimumScaleFactor(0.7)
+                        .privacySensitive()
                 }
 
                 VStack(alignment: .trailing, spacing: 4) {
                     Text("Liabilities")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
-                    Text(entry.liabilities, format: .currency(code: entry.currencyCode).precision(.fractionLength(0)))
+                    Text(snapshot.liabilities, format: .currency(code: currencyCode).precision(.fractionLength(0)))
                         .font(.subheadline)
                         .bold()
                         .foregroundStyle(.red)
                         .minimumScaleFactor(0.7)
+                        .privacySensitive()
                 }
             }
         }
@@ -269,27 +258,12 @@ struct NetWorthWidgetBundle: WidgetBundle {
 #Preview("Small Widget", as: .systemSmall) {
     NetWorthWidget()
 } timeline: {
-    NetWorthEntry(
-        date: .now,
-        netWorth: 250_000,
-        assets: 350_000,
-        liabilities: 100_000,
-        percentageChange: 5.2,
-        currencyCode: "USD",
-        year: 2026
-    )
+    NetWorthEntry(date: .now, snapshot: .sample, currencyCode: "USD")
+    NetWorthEntry(date: .now, snapshot: nil, currencyCode: "USD")
 }
 
 #Preview("Medium Widget", as: .systemMedium) {
     NetWorthWidget()
 } timeline: {
-    NetWorthEntry(
-        date: .now,
-        netWorth: 250_000,
-        assets: 350_000,
-        liabilities: 100_000,
-        percentageChange: 5.2,
-        currencyCode: "USD",
-        year: 2026
-    )
+    NetWorthEntry(date: .now, snapshot: .sample, currencyCode: "USD")
 }
