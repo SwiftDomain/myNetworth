@@ -85,14 +85,15 @@ struct NetWorthProvider: TimelineProvider {
         let itemDescriptor = FetchDescriptor<FinancialItem>()
         let allItems = (try? context.fetch(itemDescriptor)) ?? []
 
-        let yearItems = allItems.filter { $0.year == currentYear }
+        // Each account counts once, at its latest entry, as in the app.
+        let yearItems = allItems.filter { $0.year == currentYear }.latestEntries()
         let totalAssets = yearItems.filter { $0.itemType == "asset" }.reduce(0) { $0 + $1.amount }
         let totalLiabilities = yearItems.filter { $0.itemType == "liability" }.reduce(0) { $0 + $1.amount }
         let netWorth = totalAssets - totalLiabilities
 
         // Previous year for percentage change
         let previousYear = currentYear - 1
-        let prevItems = allItems.filter { $0.year == previousYear }
+        let prevItems = allItems.filter { $0.year == previousYear }.latestEntries()
         let prevAssets = prevItems.filter { $0.itemType == "asset" }.reduce(0) { $0 + $1.amount }
         let prevLiabilities = prevItems.filter { $0.itemType == "liability" }.reduce(0) { $0 + $1.amount }
         let prevNetWorth = prevAssets - prevLiabilities

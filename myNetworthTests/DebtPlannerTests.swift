@@ -229,4 +229,30 @@ struct DebtTermsTests {
         // Debts without saved terms count as interest-free with no minimum payment.
         #expect(viewModel.plannerDebts.allSatisfy { $0.annualRate == 0 && $0.minimumPayment == 0 })
     }
+
+    @Test("A new year that hasn't been filled in yet doesn't empty the plan")
+    func emptyCurrentYear() throws {
+        let store = try TestStore()
+        let viewModel = store.viewModel
+        viewModel.addYear(thisYear - 1)
+        store.addItem("Visa", 3_000, year: thisYear - 1, category: "Credit Card", asset: false)
+        viewModel.addYear(thisYear)
+
+        #expect(viewModel.currentDebtYear == thisYear - 1)
+        #expect(viewModel.currentDebts.map(\.name) == ["Visa"])
+        #expect(viewModel.plannerDebts.map(\.balance) == [3_000])
+    }
+
+    @Test("Once this year has items, debts missing from it count as paid off")
+    func currentYearWithoutDebts() throws {
+        let store = try TestStore()
+        let viewModel = store.viewModel
+        viewModel.addYear(thisYear - 1)
+        store.addItem("Visa", 3_000, year: thisYear - 1, category: "Credit Card", asset: false)
+        viewModel.addYear(thisYear)
+        store.addItem("Savings", 8_000, year: thisYear, category: "Cash", asset: true)
+
+        #expect(viewModel.currentDebtYear == thisYear)
+        #expect(viewModel.currentDebts.isEmpty)
+    }
 }

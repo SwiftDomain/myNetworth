@@ -199,6 +199,40 @@ class DebtTerms {
     }
 }
 
+// MARK: - Balances
+
+/// Entries with the same name, category and type are one account.
+private struct AccountKey: Hashable {
+    let name: String
+    let category: String
+    let itemType: String
+
+    init(_ item: FinancialItem) {
+        name = item.name
+        category = item.category
+        itemType = item.itemType
+    }
+}
+
+extension Collection where Element == FinancialItem {
+
+    /// The entries that make up each account's balance as of `month`, from one year's items.
+    ///
+    /// An account's balance is its most recent entry: a monthly entry replaces the yearly
+    /// amount from that month on, and a later month replaces an earlier one, so updates
+    /// aren't added on top of the old amount. Entries for the same account in the same
+    /// month are added together, as with two yearly items of the same name.
+    func latestEntries(throughMonth month: Int = 12) -> [FinancialItem] {
+        let entries = filter { $0.month <= month }
+        var latestMonth: [AccountKey: Int] = [:]
+        for item in entries {
+            let key = AccountKey(item)
+            latestMonth[key] = Swift.max(latestMonth[key] ?? 0, item.month)
+        }
+        return entries.filter { $0.month == latestMonth[AccountKey($0)] }
+    }
+}
+
 // MARK: - Computed Yearly Data (not persisted)
 
 struct YearlyData: Identifiable {
@@ -209,6 +243,18 @@ struct YearlyData: Identifiable {
     var netWorth: Int
     var assetCategoryTotal: [AssetCategories: Int]
     var liabilityCategoryTotal: [LiabilityCategories: Int]
+}
+
+/// Balances as of the end of one month.
+struct MonthlyBalance: Identifiable {
+    var id: Int { month }
+    let month: Int
+    let assets: Int
+    let liabilities: Int
+    /// Whether anything was entered for this month. Other months only carry earlier balances.
+    let hasEntries: Bool
+
+    var netWorth: Int { assets - liabilities }
 }
 
 // MARK: - Legacy Model (for UserDefaults migration)
