@@ -73,6 +73,13 @@ struct MainTabView: View {
                 SettingsView(viewModel: viewModel)
             }
         }
+        .overlay {
+            if let goal = viewModel.goalToCelebrate {
+                GoalCelebrationView(goal: goal, currencyCode: viewModel.currencyCode) {
+                    viewModel.markCelebrated(goal)
+                }
+            }
+        }
         // Amounts marked `.privacySensitive()` are masked while this is on.
         .redacted(reason: hideAmounts ? .privacy : [])
         .onChange(of: AppRouter.shared.checkInRequests) {

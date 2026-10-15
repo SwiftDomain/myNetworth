@@ -39,7 +39,8 @@ struct OverallAnalysisView: View {
                         // Net Worth Trend Chart
                         NetWorthChartView(
                             data: viewModel.yearlyData,
-                            currencyCode: viewModel.currencyCode
+                            currencyCode: viewModel.currencyCode,
+                            projection: viewModel.netWorthProjection
                         )
 
                         // Assets vs Liabilities Chart
@@ -154,11 +155,26 @@ struct OverallAnalysisView: View {
 struct NetWorthChartView: View {
     let data: [YearlyData]
     var currencyCode: String = "USD"
+    /// "Future you": drawn as a dashed line and listed under the chart.
+    var projection: NetWorthProjection?
 
-    // Categorical year labels bounding the x-axis to the min…max entered years,
-    // matching the Assets vs Liabilities chart.
-    private var yearLabels: [String] {
-        data.map(\.year).sorted().map(String.init)
+    private var currency: IntegerFormatStyle<Int>.Currency {
+        .currency(code: currencyCode).precision(.fractionLength(0))
+    }
+
+    /// From the first tracked year to the furthest projected one. Years are numbers rather
+    /// than labels so that 5, 10 and 20 years ahead are spaced in proportion.
+    private var yearRange: ClosedRange<Int> {
+        let years = data.map(\.year) + (projection?.points.map(\.year) ?? [])
+        let first = years.min() ?? 0
+        return first...max(years.max() ?? first, first + 1)
+    }
+
+    /// About five evenly spaced years to label.
+    private var axisYears: [Int] {
+        let span = yearRange.upperBound - yearRange.lowerBound
+        let step = max(1, Int((Double(span) / 4).rounded(.up)))
+        return Array(stride(from: yearRange.lowerBound, through: yearRange.upperBound, by: step))
     }
 
     var body: some View {
@@ -167,27 +183,54 @@ struct NetWorthChartView: View {
                 .font(.headline)
                 .foregroundStyle(Theme.textPrimary)
 
-            Chart(data) { item in
-                LineMark(
-                    x: .value("Year", String(item.year)),
-                    y: .value("Net Worth", item.netWorth)
-                )
-                .foregroundStyle(.blue)
-                .lineStyle(StrokeStyle(lineWidth: 3))
+            Chart {
+                ForEach(data) { item in
+                    LineMark(
+                        x: .value("Year", item.year),
+                        y: .value("Net Worth", item.netWorth),
+                        series: .value("Line", "Net worth")
+                    )
+                    .foregroundStyle(.blue)
+                    .lineStyle(StrokeStyle(lineWidth: 3))
 
-                PointMark(
-                    x: .value("Year", String(item.year)),
-                    y: .value("Net Worth", item.netWorth)
-                )
-                .foregroundStyle(.blue)
+                    PointMark(
+                        x: .value("Year", item.year),
+                        y: .value("Net Worth", item.netWorth)
+                    )
+                    .foregroundStyle(.blue)
+                }
+
+                if let projection {
+                    ForEach(projection.points) { point in
+                        LineMark(
+                            x: .value("Year", point.year),
+                            y: .value("Net Worth", point.netWorth),
+                            series: .value("Line", "Future you")
+                        )
+                        .foregroundStyle(.purple)
+                        .lineStyle(StrokeStyle(lineWidth: 2, dash: [6, 4]))
+                    }
+
+                    ForEach(projection.points.dropFirst()) { point in
+                        PointMark(
+                            x: .value("Year", point.year),
+                            y: .value("Net Worth", point.netWorth)
+                        )
+                        .foregroundStyle(.purple)
+                    }
+                }
             }
             .frame(height: 250)
-            .chartXScale(domain: yearLabels)
+            .chartXScale(domain: yearRange)
             .chartXAxis {
-                AxisMarks { _ in
+                AxisMarks(values: axisYears) { value in
                     AxisGridLine()
-                    AxisValueLabel()
-                        .foregroundStyle(.white)
+                    AxisValueLabel {
+                        if let year = value.as(Int.self) {
+                            Text(String(year))
+                                .foregroundStyle(.white)
+                        }
+                    }
                 }
             }
             .chartYAxis {
@@ -198,10 +241,54 @@ struct NetWorthChartView: View {
                 }
             }
             .privateChartAxis()
+
+            if let projection {
+                futureYou(projection)
+            }
         }
         .padding()
         .background(Theme.cardBackground)
         .clipShape(.rect(cornerRadius: 16))
+    }
+
+    private func futureYou(_ projection: NetWorthProjection) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "sparkles")
+                    .foregroundStyle(.purple)
+                Text("Future you")
+                    .font(.subheadline)
+                    .bold()
+                    .foregroundStyle(Theme.textPrimary)
+            }
+
+            HStack(alignment: .top) {
+                ForEach(NetWorthProjection.horizons, id: \.self) { years in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("In \(years) years")
+                            .font(.caption)
+                            .foregroundStyle(Theme.textSecondary)
+                        Text(projection.netWorth(inYears: years), format: currency)
+                            .font(.subheadline)
+                            .bold()
+                            .foregroundStyle(Theme.textPrimary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .privacySensitive()
+                        Text(String(projection.baseYear + years))
+                            .font(.caption2)
+                            .foregroundStyle(Theme.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+
+            let change = projection.averageYearlyChange
+            Text("If your net worth keeps \(change >= 0 ? "growing" : "falling") by \(abs(change), format: currency) a year, your average since \(String(projection.firstYear)).")
+                .font(.caption)
+                .foregroundStyle(Theme.textSecondary)
+                .privacySensitive()
+        }
     }
 }
 
