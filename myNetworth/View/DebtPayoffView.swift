@@ -13,11 +13,13 @@ import SwiftData
 struct DebtPayoffView: View {
     /// Where the chosen strategy is saved. Home reads it to suggest the same debt.
     static let strategyKey = "debtPlanner.strategy"
+    /// Where the extra monthly payment is saved, as typed.
+    static let extraPaymentKey = "debtPlanner.extraPayment"
 
     var viewModel: NetWorthViewModel
 
     // Remembered between visits on this device.
-    @AppStorage("debtPlanner.extraPayment") private var extraText = ""
+    @AppStorage(DebtPayoffView.extraPaymentKey) private var extraText = ""
     @AppStorage(DebtPayoffView.strategyKey) private var strategy: PayoffStrategy = .snowball
     @State private var debtBeingEdited: FinancialItem?
 

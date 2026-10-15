@@ -42,6 +42,8 @@
 		3EAA00432F00000F001016E5 /* QuickStart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00422F00000F001016E5 /* QuickStart.swift */; };
 		3EAA00452F00000F001016E5 /* QuickStartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00442F00000F001016E5 /* QuickStartView.swift */; };
 		3EAA00472F000010001016E5 /* Coaching.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00462F000010001016E5 /* Coaching.swift */; };
+		3EAA00492F000011001016E5 /* Assistant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA00482F000011001016E5 /* Assistant.swift */; };
+		3EAA004B2F000011001016E5 /* AskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA004A2F000011001016E5 /* AskView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -114,6 +116,8 @@
 		3EAA00422F00000F001016E5 /* QuickStart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickStart.swift; sourceTree = "<group>"; };
 		3EAA00442F00000F001016E5 /* QuickStartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickStartView.swift; sourceTree = "<group>"; };
 		3EAA00462F000010001016E5 /* Coaching.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coaching.swift; sourceTree = "<group>"; };
+		3EAA00482F000011001016E5 /* Assistant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Assistant.swift; sourceTree = "<group>"; };
+		3EAA004A2F000011001016E5 /* AskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -201,6 +205,7 @@
 				3EAA00252F00000D001016E5 /* HomeTab.swift */,
 				3EAA00272F00000D001016E5 /* AccountsTab.swift */,
 				3EAA00442F00000F001016E5 /* QuickStartView.swift */,
+				3EAA004A2F000011001016E5 /* AskView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -220,6 +225,7 @@
 				3EAA00402F00000F001016E5 /* Reminders.swift */,
 				3EAA00422F00000F001016E5 /* QuickStart.swift */,
 				3EAA00462F000010001016E5 /* Coaching.swift */,
+				3EAA00482F000011001016E5 /* Assistant.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -410,6 +416,8 @@
 				3EAA00432F00000F001016E5 /* QuickStart.swift in Sources */,
 				3EAA00452F00000F001016E5 /* QuickStartView.swift in Sources */,
 				3EAA00472F000010001016E5 /* Coaching.swift in Sources */,
+				3EAA00492F000011001016E5 /* Assistant.swift in Sources */,
+				3EAA004B2F000011001016E5 /* AskView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
